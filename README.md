@@ -4,8 +4,6 @@ A Chrome extension that hides YouTube's home feed and video recommendations duri
 
 Think of it as a cold-turkey blocker for the recommendation algorithm, not for YouTube itself.
 
-> Slovak documentation: [README.sk.md](README.sk.md)
-
 ## What it does
 
 - **Hides the home feed** and the recommendations next to the video, but only inside your focus window.
