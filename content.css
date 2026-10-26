@@ -1,0 +1,104 @@
+/* The home feed and the watch sidebar are hidden by what they ARE, not by the current
+   route. YouTube keeps the old page on screen for a moment after the URL changes, and the
+   route flag below flips at once, so a route-only rule let the old feed show through
+   while a search, channel or other page was still loading. These selectors only ever
+   match the home page's own feed and the watch page's own sidebar, so they are safe
+   on every route. */
+html[data-yfl-active="true"] ytd-browse[page-subtype="home"] #primary,
+html[data-yfl-active="true"] ytd-browse[page-subtype="home"] #header,
+html[data-yfl-active="true"] ytd-browse[page-subtype="home"] ytd-rich-grid-renderer,
+html[data-yfl-active="true"] ytd-browse[page-subtype="home"] ytd-rich-section-renderer,
+html[data-yfl-active="true"] ytd-browse[page-subtype="home"] ytd-two-column-browse-results-renderer > #primary,
+html[data-yfl-active="true"] ytd-watch-flexy #related,
+html[data-yfl-active="true"] ytd-watch-grid #related,
+html[data-yfl-active="true"] ytd-watch-grid #related-container,
+html[data-yfl-active="true"] ytd-watch-next-secondary-results-renderer {
+  display: none !important;
+}
+
+/* Route-based rules, kept for the moment before YouTube has set page-subtype on a freshly
+   loaded home page. Search results, channels, subscriptions, the video player, comments
+   and playlist controls keep their original layout. */
+html[data-yfl-active="true"][data-yfl-page="home"] ytd-browse[page-subtype="home"] #primary,
+html[data-yfl-active="true"][data-yfl-page="home"] ytd-browse[page-subtype="home"] #header,
+html[data-yfl-active="true"][data-yfl-page="home"] ytd-browse ytd-rich-grid-renderer,
+html[data-yfl-active="true"][data-yfl-page="home"] ytd-browse ytd-rich-section-renderer,
+html[data-yfl-active="true"][data-yfl-page="home"] ytd-browse ytd-two-column-browse-results-renderer > #primary,
+html[data-yfl-active="true"][data-yfl-page="watch"] ytd-watch-flexy #related,
+html[data-yfl-active="true"][data-yfl-page="watch"] ytd-watch-grid #related,
+html[data-yfl-active="true"][data-yfl-page="watch"] ytd-watch-grid #related-container,
+html[data-yfl-active="true"][data-yfl-page="watch"] ytd-watch-next-secondary-results-renderer {
+  display: none !important;
+}
+
+/* Focus notice: same palette and type as the popup. Colors stay fixed on purpose,
+   so it reads the same on YouTube's light and dark themes. */
+#yfl-focus-notice {
+  display: none !important;
+}
+
+html[data-yfl-active="true"][data-yfl-page="home"] #yfl-focus-notice {
+  display: block !important;
+  position: fixed !important;
+  top: clamp(135px, 22vh, 230px) !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: min(440px, calc(100vw - 64px)) !important;
+  box-sizing: border-box !important;
+  padding: 28px 28px 30px !important;
+  border: 0 !important;
+  border-radius: 4px !important;
+  background: #e8e6e1 !important;
+  color: #151515 !important;
+  font-family: Inter, "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif !important;
+  -webkit-font-smoothing: antialiased !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+#yfl-focus-notice .yfl-notice-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  color: #151515;
+}
+
+#yfl-focus-notice .yfl-notice-brand::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #e5481a;
+}
+
+#yfl-focus-notice h2 {
+  margin: 32px 0 0;
+  font-size: 40px;
+  line-height: 1.06;
+  font-weight: 700;
+  letter-spacing: -.04em;
+  color: #151515;
+}
+
+#yfl-focus-notice .yfl-notice-line {
+  display: block;
+}
+
+#yfl-focus-notice .yfl-notice-time {
+  font-family: "SF Mono", "Cascadia Mono", Consolas, Menlo, "Liberation Mono", "DejaVu Sans Mono", monospace;
+  font-weight: 400;
+  letter-spacing: -.07em;
+}
+
+#yfl-focus-notice p {
+  margin: 26px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid #d3d1ca;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #66635e;
+}

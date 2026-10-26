@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>Focus Lock</title>
+    <link rel="stylesheet" href="popup.css">
+    <script src="schedule.js" defer></script>
+    <script src="popup.js" defer></script>
+  </head>
+  <body data-state="loading">
+    <main>
+      <header class="topbar">
+        <span class="brand">Focus Lock</span>
+        <time class="clock" id="clock"><span class="clock-dot" aria-hidden="true"></span><span id="clock-time">--:--</span></time>
+      </header>
+
+      <h1 class="headline" id="headline">
+        <span class="headline-line" id="headline-lead">Loading</span>
+        <span class="headline-line"><span id="headline-prefix">schedule…</span><span class="headline-time" id="headline-time" hidden></span><span id="headline-dot" hidden>.</span></span>
+      </h1>
+
+      <section class="timeline" id="timeline" role="img" aria-label="24-hour timeline">
+        <div class="timeline-scale">
+          <span class="timeline-base"></span>
+          <span class="timeline-bar" hidden></span>
+          <span class="timeline-bar" hidden></span>
+          <span class="timeline-ticks" id="timeline-ticks" aria-hidden="true"></span>
+          <span class="timeline-now" id="timeline-now"></span>
+        </div>
+        <div class="timeline-labels" aria-hidden="true">
+          <span style="--at: 0">00</span><span style="--at: .25">06</span><span style="--at: .5">12</span><span style="--at: .75">18</span><span style="--at: 1">24</span>
+        </div>
+      </section>
+
+      <form class="schedule" id="schedule-form" novalidate>
+        <div class="field">
+          <label for="start">From</label>
+          <input type="text" id="start" name="start" inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="5" placeholder="HH:mm" required disabled>
+          <span class="time-value" id="start-value" hidden></span>
+        </div>
+        <div class="field">
+          <label for="end">To</label>
+          <input type="text" id="end" name="end" inputmode="numeric" autocomplete="off" spellcheck="false" maxlength="5" placeholder="HH:mm" required disabled>
+          <span class="time-value" id="end-value" hidden></span>
+        </div>
+        <div class="action">
+          <button id="save" type="submit" disabled>Save</button>
+          <p class="lock-status" id="lock-status" hidden><svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5.25 7V5a2.75 2.75 0 0 1 5.5 0v2" stroke="currentColor" stroke-width="1.5"/></svg>Locked</p>
+        </div>
+      </form>
+      <p class="message" id="form-message" role="status" aria-live="polite"></p>
+    </main>
+  </body>
+</html>
