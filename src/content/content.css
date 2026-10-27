@@ -37,10 +37,24 @@ html[data-yfl-active="true"][data-yfl-block-subscriptions="true"][data-yfl-page=
   display: none !important;
 }
 
-/* The notice card uses fixed colors on purpose, so it reads the same on YouTube's light
-   and dark themes. content.js shows it by setting data-yfl-notice on <html>. */
+/* The notice card follows the light or dark mode picked in the popup, not YouTube's own theme.
+   content.js shows it by setting data-yfl-notice on <html>, and the mode with data-yfl-theme. */
 #yfl-focus-notice {
+  --yfl-bg: #e8e6e1;
+  --yfl-ink: #151515;
+  --yfl-muted: #66635e;
+  --yfl-rule: #d3d1ca;
+  --yfl-accent: #e5481a;
   display: none !important;
+}
+
+html[data-yfl-theme="dark"] #yfl-focus-notice {
+  --yfl-bg: #161513;
+  --yfl-ink: #ece9e2;
+  --yfl-muted: #9a968d;
+  --yfl-rule: #34322e;
+  --yfl-accent: #ff6a3d;
+  box-shadow: 0 0 0 1px var(--yfl-rule) !important;
 }
 
 html[data-yfl-notice="true"] #yfl-focus-notice {
@@ -54,8 +68,8 @@ html[data-yfl-notice="true"] #yfl-focus-notice {
   padding: 28px 28px 30px !important;
   border: 0 !important;
   border-radius: 4px !important;
-  background: #e8e6e1 !important;
-  color: #151515 !important;
+  background: var(--yfl-bg) !important;
+  color: var(--yfl-ink) !important;
   font-family: Inter, "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif !important;
   -webkit-font-smoothing: antialiased !important;
   z-index: 1 !important;
@@ -70,7 +84,7 @@ html[data-yfl-notice="true"] #yfl-focus-notice {
   line-height: 1.4;
   font-weight: 700;
   letter-spacing: -.01em;
-  color: #151515;
+  color: var(--yfl-ink);
 }
 
 #yfl-focus-notice .yfl-notice-brand::before {
@@ -78,7 +92,7 @@ html[data-yfl-notice="true"] #yfl-focus-notice {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #e5481a;
+  background: var(--yfl-accent);
 }
 
 #yfl-focus-notice h2 {
@@ -87,7 +101,7 @@ html[data-yfl-notice="true"] #yfl-focus-notice {
   line-height: 1.06;
   font-weight: 700;
   letter-spacing: -.04em;
-  color: #151515;
+  color: var(--yfl-ink);
 }
 
 #yfl-focus-notice .yfl-notice-line {
@@ -103,8 +117,8 @@ html[data-yfl-notice="true"] #yfl-focus-notice {
 #yfl-focus-notice p {
   margin: 26px 0 0;
   padding-top: 18px;
-  border-top: 1px solid #d3d1ca;
+  border-top: 1px solid var(--yfl-rule);
   font-size: 14px;
   line-height: 1.5;
-  color: #66635e;
+  color: var(--yfl-muted);
 }

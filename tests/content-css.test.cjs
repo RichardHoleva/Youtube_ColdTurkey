@@ -60,7 +60,18 @@ test('no other rule can reach the subscriptions page or its sidebar links', () =
   for (const selector of others) assert.ok(!/subscriptions/.test(selector), selector);
 });
 
+test('the notice card takes every color from variables, with a dark set', () => {
+  // A hard-coded color on the card would ignore the mode picked in the popup.
+  const card = css.slice(css.indexOf('#yfl-focus-notice {'))
+    .replace(/#yfl-focus-notice\s*\{[^}]*--yfl-[^}]*\}/g, '')
+    .replace(/html\[data-yfl-theme="dark"\] #yfl-focus-notice\s*\{[^}]*\}/, '');
+  assert.doesNotMatch(card, /#[0-9a-f]{3,8}\b/i, 'card rules must use var(--yfl-*), not literal colors');
+  for (const name of ['bg', 'ink', 'muted', 'rule', 'accent']) {
+    assert.match(css, new RegExp(`html\\[data-yfl-theme="dark"\\] #yfl-focus-notice\\s*\\{[^}]*--yfl-${name}:`), `dark value for --yfl-${name}`);
+  }
+});
+
 test('the notice card is shown only through the notice flag', () => {
   assert.match(css, /html\[data-yfl-notice="true"\] #yfl-focus-notice\s*\{\s*display:\s*block\s*!important/);
-  assert.match(css, /#yfl-focus-notice\s*\{\s*display:\s*none\s*!important/);
+  assert.match(css, /(^|\})\s*#yfl-focus-notice\s*\{[^}]*display:\s*none\s*!important/);
 });

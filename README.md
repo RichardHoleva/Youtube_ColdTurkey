@@ -32,7 +32,7 @@ A confirmation popup explains what will happen, including that you won't be able
 
 Below the hours, a **Settings** row opens extra options in place when you click it. A switch is saved the moment you flip it, and like the hours it can't be changed while the lock is on. The **Subscriptions** switch works. The **Shorts** switch is visual only for now.
 
-The sun/moon switch in the top bar changes between light and dark mode. It remembers your choice, starts out following your system setting, and keeps working during a lock.
+The sun/moon switch in the top bar changes between light and dark mode. It remembers your choice, starts out following your system setting, and keeps working during a lock. The "No feed until HH:mm" card on YouTube follows the same choice, including live while a YouTube tab is open.
 
 The start time is included and the end time is not: with 08:00-20:00, blocking begins at 08:00 and ends at 20:00. Start and end can't be the same time.
 
@@ -48,7 +48,7 @@ This is a focus aid, not a security tool. Read this before relying on it:
 
 ## Privacy and permissions
 
-- `storage` saves your schedule and switches locally with `chrome.storage.local`. The light/dark choice is kept in the popup's own browser storage.
+- `storage` saves your schedule, switches and light/dark choice locally with `chrome.storage.local`.
 - `alarms` schedules the checks that switch blocking on and off.
 - Site access is limited to `youtube.com` and `www.youtube.com`.
 
@@ -63,6 +63,7 @@ src/
   shared/                Used by the background worker, the content script and the popup
     schedule.js          Time-window rules: parsing, overnight windows, DST-safe transitions
     options.js           The switchable extras (Shorts, Subscriptions) and their validation
+    theme.js             Light or dark: a saved choice wins, otherwise follow the system
   background/            Service worker
     background.js        Entry point: messages, the settings lock, listeners
     state.js             Reads storage and derives the current state
@@ -71,7 +72,7 @@ src/
   content/               Runs on YouTube pages
     content.js           Sets flags on <html> from the schedule, switches and page
     content.css          The hiding rules that react to those flags
-    notice.js            The "No feed until HH:mm" card
+    notice.js            The "No feed until HH:mm" card (follows the popup's light/dark choice)
   popup/                 The popup
     popup.html           Page structure
     main.js              Connects the modules below

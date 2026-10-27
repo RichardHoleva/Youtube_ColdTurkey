@@ -1,12 +1,12 @@
 // Runs in <head> before anything is painted, so the popup never flashes the wrong colors.
-// With no saved choice it follows the operating system.
+// localStorage is a synchronous copy of the saved choice; chrome.storage (read later by
+// theme-switch.js) is the real one, because the YouTube card needs it too.
 (() => {
-  let dark = false;
+  let saved = null;
   try {
-    const saved = localStorage.getItem("theme");
-    dark = saved ? saved === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    saved = localStorage.getItem("theme");
   } catch {
-    // Storage can be blocked; fall back to light.
+    // Storage can be blocked; the system setting decides.
   }
-  document.documentElement.dataset.theme = dark ? "dark" : "light";
+  document.documentElement.dataset.theme = FocusTheme.resolve(saved, matchMedia("(prefers-color-scheme: dark)").matches);
 })();

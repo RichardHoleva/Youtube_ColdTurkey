@@ -6,6 +6,7 @@
   const HEARTBEAT_MS = 10_000;
   let schedule = null; // nothing is hidden until the user has saved hours
   let options = FocusOptions.normalize();
+  let savedTheme = null; // the choice made in the popup; null until the user makes one
   let boundaryTimer;
   let refreshQueued = false;
   let nextChangeLabel = "";
@@ -50,6 +51,7 @@
 
     setRootAttribute("data-yfl-active", active);
     setRootAttribute("data-yfl-page", page);
+    setRootAttribute("data-yfl-theme", FocusTheme.resolve(savedTheme, matchMedia("(prefers-color-scheme: dark)").matches));
     for (const key of FocusOptions.KEYS) setRootAttribute(`data-yfl-block-${key}`, active && options[key]);
 
     if (reschedule || boundaryTimer === undefined) scheduleBoundary(now);
@@ -76,8 +78,10 @@
 
   function loadSettings() {
     try {
-      chrome.storage.local.get(["schedule", "options"], (stored) => {
-        if (!chrome.runtime.lastError) apply(stored);
+      chrome.storage.local.get(["schedule", "options", "theme"], (stored) => {
+        if (chrome.runtime.lastError) return;
+        savedTheme = FocusTheme.normalize(stored.theme);
+        apply(stored);
       });
     } catch {
       // After an extension reload the old script can linger until the page navigates.
@@ -90,11 +94,11 @@
   }
 
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area !== "local" || !(changes.schedule || changes.options)) return;
-    apply({
-      schedule: changes.schedule ? changes.schedule.newValue : schedule,
-      options: changes.options ? changes.options.newValue : options
-    });
+    if (area !== "local") return;
+    if (changes.theme) savedTheme = FocusTheme.normalize(changes.theme.newValue);
+    if (changes.schedule) schedule = FocusSchedule.saved(changes.schedule.newValue);
+    if (changes.options) options = FocusOptions.normalize(changes.options.newValue);
+    render(true);
   });
 
   chrome.runtime.onMessage.addListener((message) => {
