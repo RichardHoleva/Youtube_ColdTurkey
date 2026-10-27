@@ -7,6 +7,7 @@
     <title>Focus Lock</title>
     <link rel="stylesheet" href="styles/tokens.css">
     <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/card-title.css">
     <link rel="stylesheet" href="styles/timeline.css">
     <link rel="stylesheet" href="styles/schedule-form.css">
     <link rel="stylesheet" href="styles/confirm-dialog.css">
@@ -17,6 +18,7 @@
     <script src="theme/theme-init.js"></script>
     <script src="../shared/schedule.js"></script>
     <script src="../shared/options.js"></script>
+    <script src="../shared/card-title.js"></script>
     <script type="module" src="main.js"></script>
   </head>
   <body data-state="loading" data-drawer="closed">
@@ -57,6 +59,18 @@
         <span class="headline-line" id="headline-lead">Loading</span>
         <span class="headline-line"><span id="headline-prefix">schedule…</span><span class="headline-time" id="headline-time" hidden></span><span id="headline-dot" hidden>.</span></span>
       </h1>
+
+      <div class="card-title">
+        <span class="card-title-label">On YouTube:</span>
+        <button type="button" class="card-title-button" id="card-title-edit" title="Change what the card on YouTube says">
+          <span id="card-title-text">No feed</span>
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M11.5 2.5l2 2L5 13l-3 1 1-3z"/></svg>
+        </button>
+        <form class="card-title-form" id="card-title-form" hidden>
+          <input class="card-title-input" id="card-title-input" type="text" autocomplete="off" spellcheck="false" aria-label="What the card on YouTube says">
+          <span class="card-title-count" id="card-title-count" aria-hidden="true"></span>
+        </form>
+      </div>
 
       <section class="timeline" id="timeline" role="group" aria-label="24-hour timeline">
         <div class="timeline-scale" id="timeline-scale">

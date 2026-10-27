@@ -7,6 +7,7 @@
   let schedule = null; // nothing is hidden until the user has saved hours
   let options = FocusOptions.normalize();
   let savedTheme = null; // the choice made in the popup; null until the user makes one
+  let cardTitle = FocusTitle.DEFAULT_TITLE; // what the home card says; the user can rename it
   let boundaryTimer;
   let refreshQueued = false;
   let nextChangeLabel = "";
@@ -25,7 +26,7 @@
   }
 
   function noticeLead(page) {
-    if (page === "home") return "No feed";
+    if (page === "home") return cardTitle;
     if (page === "subscriptions" && options.subscriptions) return "No subscriptions";
     return null;
   }
@@ -78,9 +79,10 @@
 
   function loadSettings() {
     try {
-      chrome.storage.local.get(["schedule", "options", "theme"], (stored) => {
+      chrome.storage.local.get(["schedule", "options", "theme", "cardTitle"], (stored) => {
         if (chrome.runtime.lastError) return;
         savedTheme = FocusTheme.normalize(stored.theme);
+        cardTitle = FocusTitle.normalize(stored.cardTitle);
         apply(stored);
       });
     } catch {
@@ -96,6 +98,7 @@
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "local") return;
     if (changes.theme) savedTheme = FocusTheme.normalize(changes.theme.newValue);
+    if (changes.cardTitle) cardTitle = FocusTitle.normalize(changes.cardTitle.newValue);
     if (changes.schedule) schedule = FocusSchedule.saved(changes.schedule.newValue);
     if (changes.options) options = FocusOptions.normalize(changes.options.newValue);
     render(true);

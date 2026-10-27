@@ -1,4 +1,5 @@
 import * as api from "./api.js";
+import "./card-title.js";
 import { closeConfirm, onConfirm, openConfirm, refreshConfirm } from "./confirm-dialog.js";
 import { byId, setText } from "./dom.js";
 import { setHeadline } from "./headline.js";

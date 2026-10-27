@@ -104,8 +104,12 @@ html[data-yfl-notice="true"] #yfl-focus-notice {
   color: var(--yfl-ink);
 }
 
+/* The first line can be a title the user wrote, so it may be long: let it wrap in balanced
+   lines instead of overflowing the card. The "until" line below it always stays. */
 #yfl-focus-notice .yfl-notice-line {
   display: block;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
 #yfl-focus-notice .yfl-notice-time {
