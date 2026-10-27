@@ -147,7 +147,7 @@ test('first save starts the lock right away when the window includes now', async
   assert.equal(app.alarms.get('focus-next-transition').scheduledTime, new Date('2026-10-24T20:00:00').getTime());
   const locked = await app.message({ type: 'SAVE_SCHEDULE', schedule: night });
   assert.equal(locked.code, 'LOCKED');
-  assert.equal(locked.message, 'Hours are locked until 20:00.');
+  assert.equal(locked.message, 'Locked until 20:00.');
   assert.deepEqual(app.storage.schedule, day);
 });
 
@@ -250,7 +250,7 @@ test('toolbar title and rejection messages are English and use the real next tra
   const app = await worker({ initial: { schedule: day } });
   assert.equal(app.titles.at(-1), 'Focus Lock: no feed until 20:00');
   const locked = await app.message({ type: 'SAVE_SCHEDULE', schedule: night });
-  assert.equal(locked.message, 'Hours are locked until 20:00.');
+  assert.equal(locked.message, 'Locked until 20:00.');
   app.setTime('2026-10-24T21:30:00');
   app.chrome.alarms.onAlarm.emit({ name: 'focus-clock-check' });
   await app.flush();
