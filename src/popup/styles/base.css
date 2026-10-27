@@ -31,4 +31,4 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 
 .message { min-height: 18px; margin-top: 10px; font-size: 13px; line-height: 18px; color: var(--muted); }
 .message.success, .message.notice { color: var(--ink); font-weight: 600; }
-.message.error { color: var(--accent-ink); font-weight: 600; }
+.message.error, .message.warning { color: var(--accent-ink); font-weight: 600; }

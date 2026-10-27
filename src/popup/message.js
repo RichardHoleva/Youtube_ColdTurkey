@@ -4,7 +4,7 @@ export const NO_MESSAGE = Object.freeze({ text: "", kind: "" });
 
 // The form and the drawer each have a line. Only one of them is ever in view.
 const lines = { form: byId("form-message"), drawer: byId("drawer-message") };
-const KINDS = ["success", "error", "notice"];
+const KINDS = ["success", "error", "notice", "warning"];
 let current = NO_MESSAGE;
 let hint = () => NO_MESSAGE;
 
