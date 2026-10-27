@@ -12,7 +12,8 @@ const hiding = [...css.matchAll(/([^{}]+)\{\s*display:\s*none\s*!important;\s*\}
   .filter((selector) => selector && !selector.includes('yfl-focus-notice'));
 const routeFree = hiding.filter((selector) => !selector.includes('data-yfl-page'));
 const subscriptions = hiding.filter((selector) => /subscriptions/.test(selector));
-const shorts = hiding.filter((selector) => /shorts|reel/i.test(selector));
+const SHORTS = /shorts|reel|m13\.467 1\.19/i; // the Shorts icon's path counts too: that rule never says "shorts"
+const shorts = hiding.filter((selector) => SHORTS.test(selector));
 
 test('home feed and watch sidebar are hidden regardless of the route flag', () => {
   // YouTube keeps the old page painted for a moment after the URL changes, and the
@@ -72,13 +73,13 @@ test('Shorts are only hidden when their switch is on', () => {
 test('every Shorts rule names something that is a Short, so it can never hide ordinary videos', () => {
   // A bare "ytd-rich-item-renderer" or "ytd-video-renderer" would hide every video on the page;
   // each one must be narrowed to the ones that link to /shorts/.
-  const aShort = /ytd-shorts$|ytd-reel-shelf-renderer$|ytd-rich-shelf-renderer\[is-shorts\]$|ytm-shorts-lockup-view-model(-v2)?(\)?)$|yt-tab-shape\[tab-title="Shorts"\]$|:has\(a\[href\^="\/shorts\/?"\]\)$/;
+  const aShort = /ytd-shorts$|ytd-reel-shelf-renderer$|ytd-rich-shelf-renderer\[is-shorts\]$|ytm-shorts-lockup-view-model(-v2)?(\)?)$|yt-tab-shape\[tab-title="Shorts"\]$|:has\(a\[(href\^="\/shorts\/?"|title="Shorts")\]\)$|:has\(path\[d\^="m13\.467 1\.19-8 4\.7"\]\)$/;
   for (const selector of shorts) assert.match(selector, aShort, `not clearly a Short: ${selector}`);
 });
 
 test('no other rule can reach Shorts', () => {
   const others = hiding.filter((selector) => !shorts.includes(selector));
-  for (const selector of others) assert.ok(!/shorts|reel/i.test(selector), selector);
+  for (const selector of others) assert.ok(!SHORTS.test(selector), selector);
 });
 
 test('the notice card takes every color from variables, with a dark set', () => {

@@ -51,10 +51,14 @@ html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-rich-item-rendere
 html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-grid-video-renderer:has(a[href^="/shorts/"]),
 html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-compact-video-renderer:has(a[href^="/shorts/"]),
 html[data-yfl-active="true"][data-yfl-block-shorts="true"] yt-tab-shape[tab-title="Shorts"],
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-mini-guide-entry-renderer:has(a[href^="/shorts"]),
 html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-guide-entry-renderer:has(a[href^="/shorts"]),
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-mini-guide-entry-renderer:has(a[href^="/shorts"]) {
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-guide-entry-renderer:has(a[title="Shorts"]),
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-guide-entry-renderer:has(path[d^="m13.467 1.19-8 4.7"]) {
   display: none !important;
 }
+/* The full sidebar's Shorts entry has no link address. It is found by its label, and by its
+   icon for languages where the label is translated. */
 
 /* The notice card follows the light or dark mode picked in the popup, not YouTube's own theme.
    content.js shows it by setting data-yfl-notice on <html>, and the mode with data-yfl-theme. */
