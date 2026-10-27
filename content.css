@@ -40,10 +40,13 @@ html[data-yfl-active="true"][data-yfl-page="watch"] ytd-watch-next-secondary-res
 html[data-yfl-active="true"][data-yfl-page="home"] #yfl-focus-notice {
   display: block !important;
   position: fixed !important;
-  top: clamp(135px, 22vh, 230px) !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-  width: min(440px, calc(100vw - 64px)) !important;
+  /* Vertically halfway between the 56px YouTube top bar and the bottom of the window. */
+  top: calc(50% + 28px) !important;
+  /* content.js sets --yfl-center and --yfl-width from YouTube's page area, which sits
+     right of the sidebar. The fallbacks center on the whole window. */
+  left: var(--yfl-center, 50%) !important;
+  transform: translate(-50%, -50%) !important;
+  width: min(440px, calc(var(--yfl-width, 100vw) - 64px)) !important;
   box-sizing: border-box !important;
   padding: 28px 28px 30px !important;
   border: 0 !important;

@@ -12,6 +12,8 @@
   let notice;
   let noticeTime;
   let nextChangeLabel = "";
+  let contentWatcher;
+  let watchedContent;
 
   function pageType() {
     const path = location.pathname.replace(/\/+$/, "") || "/";
@@ -61,6 +63,27 @@
     if (noticeTime && noticeTime.textContent !== nextChangeLabel) noticeTime.textContent = nextChangeLabel;
   }
 
+  // YouTube's sidebar pushes the page area right, so the window center is not the center
+  // of the empty home page. Follow the page area instead, including when the sidebar toggles.
+  function positionNotice() {
+    if (!notice?.isConnected) return;
+    const content = document.querySelector("ytd-page-manager");
+    if (content !== watchedContent) {
+      contentWatcher ??= new ResizeObserver(positionNotice);
+      contentWatcher.disconnect();
+      watchedContent = content;
+      if (content) contentWatcher.observe(content);
+    }
+    const { left, width } = content?.getBoundingClientRect() ?? { width: 0 };
+    if (width > 0) {
+      notice.style.setProperty("--yfl-center", `${left + width / 2}px`);
+      notice.style.setProperty("--yfl-width", `${width}px`);
+    } else {
+      notice.style.removeProperty("--yfl-center");
+      notice.style.removeProperty("--yfl-width");
+    }
+  }
+
   function refresh(reschedule = false) {
     const root = document.documentElement;
     if (!root) return;
@@ -84,6 +107,7 @@
     if (active && page === "home") {
       ensureNotice();
       updateNotice();
+      positionNotice();
     }
   }
 
