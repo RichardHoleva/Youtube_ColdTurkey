@@ -6,7 +6,7 @@ import { NO_MESSAGE, paintMessage, setMessageHint, showMessage } from "./message
 import { draftDiffersFrom, draftSchedule, listen, readDraft, renderForm, showSchedule, takeDraft } from "./schedule-form.js";
 import "./settings/drawer.js";
 import { listenToOptions, setOptionsLocked, showOptions } from "./settings/options.js";
-import { isLocked, lockedNotice, state } from "./state.js";
+import { addOnlyNotice, isLocked, keptBlockedNotice, lockedNotice, state } from "./state.js";
 import "./theme/theme-switch.js";
 import { renderTimeline } from "./timeline.js";
 
@@ -77,7 +77,7 @@ function render() {
 
 setMessageHint((line) => {
   const now = new Date();
-  if (isLocked(now)) return { text: lockedNotice(now), kind: "notice" };
+  if (isLocked(now)) return { text: line === "drawer" ? addOnlyNotice(now) : lockedNotice(now), kind: "notice" };
   if (line === "drawer") return NO_MESSAGE;
   const { start, end } = readDraft();
   if (start !== null && end !== null && start > end) return { text: "Runs through midnight.", kind: "" };
@@ -146,6 +146,7 @@ async function commitSchedule(draft) {
 // Switches save as soon as they are flipped. If saving fails they go back to what is stored.
 async function commitOptions(options) {
   if (state.loaded) {
+    showMessage("");
     try {
       const response = await api.saveOptions(options);
       adoptResponse(response);
@@ -160,7 +161,7 @@ async function commitOptions(options) {
 
 function reportRefusedChange() {
   const now = new Date();
-  if (isLocked(now)) showMessage(lockedNotice(now), "error");
+  if (isLocked(now)) showMessage(keptBlockedNotice(now), "error");
   else render();
 }
 

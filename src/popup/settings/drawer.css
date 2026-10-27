@@ -1,14 +1,15 @@
 /* A panel that slides over the popup from the left. It keeps the main page's top bar, so the
    button that opened it is replaced in the same spot by the one that closes it. The accent
-   edge is the timeline's cursor: it leads the panel in and trails it out. */
+   edge is the timeline's cursor: it leads the panel in and trails it out. The 24px height with
+   negative margins keeps the top bar exactly as tall as it was without the button. */
 
-.drawer-button { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; margin: -5px 0 -5px -6px; border-radius: 4px; color: var(--ink); transition: color 120ms; }
-.drawer-button:hover { color: var(--accent); }
+.drawer-button { display: flex; align-items: center; justify-content: center; width: 32px; height: 24px; margin: -3px 0; border: 1px solid var(--outline); border-radius: 4px; color: var(--ink); transition: color 120ms, background-color 120ms, border-color 120ms; }
+.drawer-button:hover { border-color: var(--accent); color: var(--accent); }
 
 .drawer {
   position: fixed; inset: 0; z-index: 1; overflow-y: auto; padding: 24px 24px 14px;
   background: var(--bg); box-shadow: 2px 0 0 var(--accent);
-  transform: translateX(calc(-100% - 2px)); transition: transform var(--sweep);
+  transform: translateX(calc(-100% - 2px)); transition: transform var(--slide);
 }
 body[data-drawer="open"] .drawer { transform: none; }
 

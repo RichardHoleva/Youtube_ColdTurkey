@@ -22,27 +22,29 @@ function refusal(code, message, state) {
   return { ok: false, code, message, state };
 }
 
+const untilLabel = (state) => FocusSchedule.timeLabel(new Date(state.nextChange));
+
+// The popup also refuses while locked, but its clock can be stale; these checks are the real lock.
 async function saveSchedule(schedule, state) {
+  if (state.active) return refusal("LOCKED", `Hours are locked until ${untilLabel(state)}.`, state);
   if (!FocusSchedule.validate(schedule)) return refusal("INVALID", "Enter two different times as HH:mm.", state);
   await chrome.storage.local.set({ schedule: FocusSchedule.normalize(schedule) });
   return { ok: true, state: await synchronize() };
 }
 
+// During the lock a switch can be turned on, never off.
 async function saveOptions(options, state) {
   if (!FocusOptions.validate(options)) return refusal("INVALID", "Couldn’t read those settings.", state);
+  if (state.active && FocusOptions.removes(state.options, options)) {
+    return refusal("LOCKED", `Blocked items stay blocked until ${untilLabel(state)}.`, state);
+  }
   await chrome.storage.local.set({ options: FocusOptions.normalize(options) });
   return { ok: true, state: await synchronize() };
 }
 
 async function handleMessage(message) {
   if (message.type === "GET_STATE") return { ok: true, state: await synchronize(false) };
-
-  // The popup also refuses while locked, but its clock can be stale; this check is the real lock.
   const state = makeState(await readStored());
-  if (state.active) {
-    const until = FocusSchedule.timeLabel(new Date(state.nextChange));
-    return refusal("LOCKED", `Settings are locked until ${until}.`, state);
-  }
   return message.type === "SAVE_SCHEDULE" ? saveSchedule(message.schedule, state) : saveOptions(message.options, state);
 }
 

@@ -12,8 +12,11 @@ export function isLocked(now) {
   return state.loaded && FocusSchedule.isActive(state.schedule, now);
 }
 
-// Only call while locked: it names the moment the lock ends.
-export function lockedNotice(now) {
-  const until = FocusSchedule.timeLabel(FocusSchedule.nextTransition(state.schedule, now));
-  return `Settings are locked until ${until}.`;
+// The notices below are only for use while locked: they name the moment the lock ends.
+function until(now) {
+  return FocusSchedule.timeLabel(FocusSchedule.nextTransition(state.schedule, now));
 }
+
+export const lockedNotice = (now) => `Hours are locked until ${until(now)}.`;
+export const addOnlyNotice = (now) => `Blocks can be added, not removed, until ${until(now)}.`;
+export const keptBlockedNotice = (now) => `Blocked items stay blocked until ${until(now)}.`;

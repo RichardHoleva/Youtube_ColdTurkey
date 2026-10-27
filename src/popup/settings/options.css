@@ -2,7 +2,10 @@
    an empty track with the cursor at the start; on, the black bar sweeps across with the
    cursor leading. */
 
-.options { border-top: 1px solid var(--rule); }
+.options {
+  --padlock: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='black' stroke-width='1.8'%3E%3Crect x='3' y='7' width='10' height='7' rx='1.5'/%3E%3Cpath d='M5.25 7V5a2.75 2.75 0 0 1 5.5 0v2'/%3E%3C/svg%3E");
+  border-top: 1px solid var(--rule);
+}
 .option:last-child { border-bottom: 1px solid var(--rule); }
 
 .options-lock { display: none; align-items: center; gap: 6px; font: 400 13px/1 var(--sans); color: var(--muted); }
@@ -36,14 +39,17 @@ body[data-state="locked"] .options-lock { display: flex; }
 .option-input:checked ~ .toggle .toggle-bar { width: 100%; }
 .option-input:checked ~ .toggle .toggle-cursor { left: calc(100% - 2px); }
 
-/* Hovering an off switch lets the bar peek out, except while locked. */
-body:not([data-state="locked"]) .option-input:not(:checked):hover ~ .toggle .toggle-bar { width: 12px; }
-body:not([data-state="locked"]) .option-input:not(:checked):hover ~ .toggle .toggle-cursor { left: 12px; }
+/* Hovering an off switch lets the bar peek out. */
+.option-input:not(:checked):hover ~ .toggle .toggle-bar { width: 12px; }
+.option-input:not(:checked):hover ~ .toggle .toggle-cursor { left: 12px; }
 
-body[data-state="locked"] .option,
-body[data-state="locked"] .option-input { cursor: not-allowed; }
-body[data-state="locked"] .option { color: var(--muted); }
-body[data-state="locked"] .toggle { opacity: .45; }
+/* During the lock a switch that is on can't be turned off: it is dimmed and gets a padlock. */
+.option-input[aria-disabled="true"] { cursor: not-allowed; }
+.option-input[aria-disabled="true"] ~ .toggle { opacity: .6; }
+.option-input[aria-disabled="true"] ~ .option-name::after {
+  content: ""; display: inline-block; width: 12px; height: 12px; margin-left: 8px; vertical-align: -1px; background: var(--muted);
+  -webkit-mask: var(--padlock) center / contain no-repeat; mask: var(--padlock) center / contain no-repeat;
+}
 
 .option-input:focus-visible ~ .toggle { outline: 2px solid var(--ink); outline-offset: 2px; }
 

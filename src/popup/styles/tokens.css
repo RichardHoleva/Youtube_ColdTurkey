@@ -17,6 +17,7 @@
   --disabled-ink: var(--bg);
   --backdrop: rgb(21 21 21 / .5);
   --sweep: 260ms cubic-bezier(.3, .7, .2, 1);
+  --slide: 480ms cubic-bezier(.25, .8, .25, 1);
   --sans: "Inter", "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
   --mono: "SF Mono", "Cascadia Mono", Consolas, Menlo, "Liberation Mono", "DejaVu Sans Mono", monospace;
 }

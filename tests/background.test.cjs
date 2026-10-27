@@ -147,7 +147,7 @@ test('first save starts the lock right away when the window includes now', async
   assert.equal(app.alarms.get('focus-next-transition').scheduledTime, new Date('2026-10-24T20:00:00').getTime());
   const locked = await app.message({ type: 'SAVE_SCHEDULE', schedule: night });
   assert.equal(locked.code, 'LOCKED');
-  assert.equal(locked.message, 'Settings are locked until 20:00.');
+  assert.equal(locked.message, 'Hours are locked until 20:00.');
   assert.deepEqual(app.storage.schedule, day);
 });
 
@@ -250,7 +250,7 @@ test('toolbar title and rejection messages are English and use the real next tra
   const app = await worker({ initial: { schedule: day } });
   assert.equal(app.titles.at(-1), 'Focus Lock: no feed until 20:00');
   const locked = await app.message({ type: 'SAVE_SCHEDULE', schedule: night });
-  assert.equal(locked.message, 'Settings are locked until 20:00.');
+  assert.equal(locked.message, 'Hours are locked until 20:00.');
   app.setTime('2026-10-24T21:30:00');
   app.chrome.alarms.onAlarm.emit({ name: 'focus-clock-check' });
   await app.flush();
@@ -262,7 +262,7 @@ test('toolbar title and rejection messages are English and use the real next tra
 test('night schedule title and lock message name the end after midnight', async () => {
   const app = await worker({ initial: { schedule: night }, time: '2026-10-24T23:00:00' });
   assert.equal(app.titles.at(-1), 'Focus Lock: no feed until 06:00');
-  assert.equal((await app.message({ type: 'SAVE_SCHEDULE', schedule: day })).message, 'Settings are locked until 06:00.');
+  assert.equal((await app.message({ type: 'SAVE_SCHEDULE', schedule: day })).message, 'Hours are locked until 06:00.');
 });
 
 test('unreachable YouTube tabs do not break state updates', async () => {
@@ -298,15 +298,51 @@ test('switches can be saved while unlocked and leave the schedule alone', async 
   assert.equal(app.broadcasts.at(-1).message.state.options.subscriptions, true);
 });
 
-test('switches cannot be changed during the lock', async () => {
+test('a switch that is on cannot be turned off during the lock', async () => {
   const locked = { shorts: false, subscriptions: true };
   const app = await worker({ initial: { schedule: day, options: locked } });
   const response = await app.message({ type: 'SAVE_OPTIONS', options: { shorts: false, subscriptions: false } });
   assert.equal(response.ok, false);
   assert.equal(response.code, 'LOCKED');
-  assert.equal(response.message, 'Settings are locked until 20:00.');
+  assert.equal(response.message, 'Blocked items stay blocked until 20:00.');
   assert.deepEqual(app.storage.options, locked);
   assert.equal(app.writes.length, 0);
+});
+
+test('more can be blocked during the lock, and it stays blocked', async () => {
+  const app = await worker({ initial: { schedule: day, options: { shorts: false, subscriptions: false } } });
+  const response = await app.message({ type: 'SAVE_OPTIONS', options: { shorts: false, subscriptions: true } });
+  assert.equal(response.ok, true);
+  assert.deepEqual(app.storage.options, { shorts: false, subscriptions: true });
+  assert.deepEqual(app.storage.schedule, day);
+  await app.flush();
+  assert.equal(app.broadcasts.at(-1).message.state.options.subscriptions, true);
+  const undo = await app.message({ type: 'SAVE_OPTIONS', options: { shorts: false, subscriptions: false } });
+  assert.equal(undo.code, 'LOCKED');
+  assert.equal(app.storage.options.subscriptions, true);
+});
+
+test('saving the same switches again during the lock is harmless', async () => {
+  const kept = { shorts: false, subscriptions: true };
+  const app = await worker({ initial: { schedule: day, options: kept } });
+  assert.equal((await app.message({ type: 'SAVE_OPTIONS', options: kept })).ok, true);
+  assert.deepEqual(app.storage.options, kept);
+});
+
+test('adding one block cannot be combined with dropping another during the lock', async () => {
+  const kept = { shorts: false, subscriptions: true };
+  const app = await worker({ initial: { schedule: day, options: kept } });
+  const response = await app.message({ type: 'SAVE_OPTIONS', options: { shorts: true, subscriptions: false } });
+  assert.equal(response.code, 'LOCKED');
+  assert.deepEqual(app.storage.options, kept);
+  assert.equal(app.writes.length, 0);
+});
+
+test('the hours stay locked even though blocks can be added', async () => {
+  const app = await worker({ initial: { schedule: day, options: { shorts: false, subscriptions: false } } });
+  await app.message({ type: 'SAVE_OPTIONS', options: { shorts: true, subscriptions: false } });
+  assert.equal((await app.message({ type: 'SAVE_SCHEDULE', schedule: night })).code, 'LOCKED');
+  assert.deepEqual(app.storage.schedule, day);
 });
 
 test('a popup with a stale clock cannot switch something off once the lock has begun', async () => {

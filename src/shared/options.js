@@ -16,7 +16,14 @@
     return options;
   }
 
-  const api = Object.freeze({ KEYS, validate, normalize });
+  // True when `next` switches off something that `current` has on.
+  function removes(current, next) {
+    const before = normalize(current);
+    const after = normalize(next);
+    return KEYS.some((key) => before[key] && !after[key]);
+  }
+
+  const api = Object.freeze({ KEYS, validate, normalize, removes });
   root.FocusOptions = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(globalThis);

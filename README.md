@@ -10,7 +10,7 @@ Think of it as a cold-turkey blocker for the recommendation algorithm, not for Y
 - **Leaves the useful parts alone:** search, the player, comments, playlist controls and channel pages.
 - **Can also block Subscriptions.** Switch it on in the block panel and, during the focus window, the subscriptions feed and the sidebar links to it disappear. Left off, subscriptions stay available.
 - **Does nothing until you set it up.** A fresh install blocks nothing. You choose your hours first, and the lock starts only after you save and confirm.
-- **Locks its own settings** while the window is active, so you can't just change them when the urge hits. The popup says "Settings are locked until HH:mm", the fields turn read-only and the switches refuse to move. It unlocks when the window ends.
+- **Locks its own settings** while the window is active, so you can't just change them when the urge hits. The hours turn read-only ("Hours are locked until HH:mm") and a block you switched on can't be switched off. You can still block more during the lock, but only in that direction. Everything unlocks when the window ends.
 - **Repeats every day** in your computer's local time. Overnight windows such as 22:00-06:00 work too.
 - **Stays private.** The schedule is stored locally in your browser, with no accounts, servers or tracking.
     
@@ -30,7 +30,7 @@ After installing, the toolbar icon shows a **SET** badge until you choose your h
 
 A confirmation popup explains what will happen, including that you won't be able to change any settings until the window ends. Click **Continue** to save, or **Go back** to change the hours. Nothing is saved and nothing is locked until you continue. If the window includes the current time, the lock starts immediately. Otherwise it starts at the **From** time.
 
-The button at the top left of the popup slides out the **Also block** panel, where you choose what else to hide. Close it with the arrow in the same spot or with Esc, and it slides back. A switch is saved the moment you flip it, and like the hours it can't be changed while the lock is on, though you can still open the panel and look. The **Subscriptions** switch works. The **Shorts** switch is visual only for now.
+The gear button at the top left of the popup slides out the **Also block** panel, where you choose what else to hide. Close it with the arrow in the same spot or with Esc, and it slides back. A switch is saved the moment you flip it. During the lock you can turn more switches on, and each one gets a padlock because it stays on until the window ends; the ones already on can't be turned off. The **Subscriptions** switch works. The **Shorts** switch is visual only for now.
 
 The sun/moon switch in the top bar changes between light and dark mode. It remembers your choice, starts out following your system setting, and keeps working during a lock. The "No feed until HH:mm" card on YouTube follows the same choice, including live while a YouTube tab is open.
 

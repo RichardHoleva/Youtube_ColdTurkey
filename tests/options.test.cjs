@@ -23,6 +23,15 @@ test('normalize keeps real booleans and treats everything else as off', () => {
   }
 });
 
+test('removes is true only when something that was on gets switched off', () => {
+  const on = { shorts: false, subscriptions: true };
+  assert.equal(options.removes(on, { shorts: false, subscriptions: false }), true);
+  assert.equal(options.removes(on, { shorts: true, subscriptions: false }), true);
+  assert.equal(options.removes(on, on), false);
+  assert.equal(options.removes(on, { shorts: true, subscriptions: true }), false);
+  assert.equal(options.removes(undefined, { shorts: false, subscriptions: false }), false);
+});
+
 test('validate demands a boolean for every switch and nothing else', () => {
   assert.equal(options.validate({ shorts: false, subscriptions: true }), true);
   for (const value of [undefined, null, [], {}, { shorts: true }, { shorts: 'true', subscriptions: false }, { shorts: 1, subscriptions: 0 }]) {
