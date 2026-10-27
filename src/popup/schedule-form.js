@@ -41,6 +41,13 @@ export function showSchedule(schedule) {
   markInvalid();
 }
 
+// Puts a window picked on the timeline into the fields, as if it had been typed.
+export function setDraft({ start, end }) {
+  startInput.value = start;
+  endInput.value = end;
+  markInvalid();
+}
+
 // Tidies the typed times and returns { draft }, or { error } after pointing at the bad field.
 export function takeDraft() {
   const draft = readDraft();

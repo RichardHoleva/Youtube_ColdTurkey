@@ -22,6 +22,25 @@ test('default schedule and normalization reject malformed storage safely', () =>
   assert.deepEqual(plain(schedule.normalize(night)), night);
 });
 
+test('minutes and times convert both ways and wrap around midnight', () => {
+  assert.equal(schedule.toMinutes('08:30'), 510);
+  assert.equal(schedule.fromMinutes(510), '08:30');
+  assert.equal(schedule.fromMinutes(0), '00:00');
+  assert.equal(schedule.fromMinutes(1440), '00:00');
+  assert.equal(schedule.fromMinutes(-5), '23:55');
+  assert.equal(schedule.fromMinutes(1440 + 65), '01:05');
+  for (const time of ['00:00', '06:15', '12:00', '23:59']) assert.equal(schedule.fromMinutes(schedule.toMinutes(time)), time);
+});
+
+test('shift slides the window and keeps its length, wrapping past midnight', () => {
+  assert.deepEqual(plain(schedule.shift(day, 60)), { start: '09:00', end: '21:00' });
+  assert.deepEqual(plain(schedule.shift(day, -480)), { start: '00:00', end: '12:00' });
+  assert.deepEqual(plain(schedule.shift({ start: '20:00', end: '23:00' }, 180)), { start: '23:00', end: '02:00' });
+  assert.deepEqual(plain(schedule.shift(night, 120)), { start: '00:00', end: '08:00' });
+  assert.deepEqual(plain(schedule.shift(day, 1440)), day);
+  assert.deepEqual(plain(schedule.shift(day, 0)), day);
+});
+
 test('nothing saved means no lock: saved() never falls back to the default', () => {
   assert.deepEqual(plain(schedule.saved(day)), day);
   assert.deepEqual(plain(schedule.saved({ ...night, extra: true })), night);

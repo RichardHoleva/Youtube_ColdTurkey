@@ -3,12 +3,13 @@ import { closeConfirm, onConfirm, openConfirm, refreshConfirm } from "./confirm-
 import { byId, setText } from "./dom.js";
 import { setHeadline } from "./headline.js";
 import { NO_MESSAGE, paintMessage, setMessageHint, showMessage } from "./message.js";
-import { draftDiffersFrom, draftSchedule, listen, readDraft, renderForm, showSchedule, takeDraft } from "./schedule-form.js";
+import { draftDiffersFrom, draftSchedule, listen, readDraft, renderForm, setDraft, showSchedule, takeDraft } from "./schedule-form.js";
 import { closeDrawer, onDrawerChange } from "./settings/drawer.js";
 import { listenToOptions, optionsDiffer, setOptionsBusy, showOptions, showSealed } from "./settings/options.js";
 import { addOnlyNotice, isLocked, keptBlockedNotice, lockedNotice, savedWhileLockedNotice, state } from "./state.js";
 import "./theme/theme-switch.js";
 import { renderTimeline } from "./timeline.js";
+import { listenToTimeline } from "./timeline-drag.js";
 
 const RETRY_TICKS = 3;
 const clockTime = byId("clock-time");
@@ -59,6 +60,11 @@ function trackLockChange(locked) {
   wasLocked = locked;
 }
 
+const canEditHours = (now) => state.loaded && !state.saving && !isLocked(now);
+
+// The window the hours currently describe: what's typed if it's a valid pair, else what's saved.
+const editedWindow = () => draftSchedule() ?? state.schedule;
+
 function render() {
   const now = new Date();
   setText(clockTime, FocusSchedule.timeLabel(now));
@@ -68,15 +74,16 @@ function render() {
   const view = viewState(locked);
   if (document.body.dataset.state !== view) document.body.dataset.state = view;
   renderHeadline(view, now);
-  renderForm({ schedule: state.schedule, locked, disabled: !state.loaded || state.saving || locked, saving: state.saving });
+  const editable = canEditHours(now);
+  renderForm({ schedule: state.schedule, locked, disabled: !editable, saving: state.saving });
   showSealed((name) => locked && state.options[name]);
   setOptionsBusy(!state.loaded || savingOptions);
 
   if (locked) closeConfirm();
   refreshConfirm(now);
 
-  const shown = !state.loaded ? null : locked ? state.schedule : draftSchedule() ?? state.schedule;
-  renderTimeline({ now, shown, saved: state.schedule });
+  const shown = !state.loaded ? null : locked ? state.schedule : editedWindow();
+  renderTimeline({ now, shown, saved: state.schedule, editable });
   paintMessage();
 }
 
@@ -190,6 +197,15 @@ listen({
     render();
   },
   onBlur: paintMessage
+});
+listenToTimeline({
+  isEditable: () => canEditHours(new Date()),
+  getWindow: editedWindow,
+  onChange: (window) => {
+    setDraft(window);
+    showMessage("");
+    render();
+  }
 });
 onConfirm(commitSchedule);
 listenToOptions({

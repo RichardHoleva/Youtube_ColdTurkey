@@ -58,13 +58,15 @@
         <span class="headline-line"><span id="headline-prefix">schedule…</span><span class="headline-time" id="headline-time" hidden></span><span id="headline-dot" hidden>.</span></span>
       </h1>
 
-      <section class="timeline" id="timeline" role="img" aria-label="24-hour timeline">
-        <div class="timeline-scale">
+      <section class="timeline" id="timeline" role="group" aria-label="24-hour timeline">
+        <div class="timeline-scale" id="timeline-scale">
           <span class="timeline-base"></span>
           <span class="timeline-bar" hidden></span>
           <span class="timeline-bar" hidden></span>
           <span class="timeline-ticks" id="timeline-ticks" aria-hidden="true"></span>
           <span class="timeline-now" id="timeline-now"></span>
+          <span class="timeline-handle" data-edge="start" role="slider" tabindex="0" aria-label="Focus starts" aria-valuemin="0" aria-valuemax="1440" hidden></span>
+          <span class="timeline-handle" data-edge="end" role="slider" tabindex="0" aria-label="Focus ends" aria-valuemin="0" aria-valuemax="1440" hidden></span>
         </div>
         <div class="timeline-labels" aria-hidden="true">
           <span style="--at: 0">00</span><span style="--at: .25">06</span><span style="--at: .5">12</span><span style="--at: .75">18</span><span style="--at: 1">24</span>

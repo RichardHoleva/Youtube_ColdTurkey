@@ -28,6 +28,8 @@ The extension is not on the Chrome Web Store, so you load it manually:
 
 After installing, the toolbar icon shows a **SET** badge until you choose your hours. Click the icon, enter **From** and **To** times in 24-hour `HH:mm` format (typing `8` or `815` is fine; 08:00 and 20:00 are pre-filled as a suggestion), and click **Save**.
 
+You can also set the hours on the 24-hour bar itself. Drag the grip at either end to change **From** or **To**, drag the bar to slide the whole window (it wraps around midnight), or click an empty spot to pull the nearer end there. Everything snaps to 5 minutes and the fields update as you drag. With a grip focused, the arrow keys nudge it by 5 minutes, or by an hour with Shift. The bar can't be dragged while the lock is on.
+
 A confirmation popup explains what will happen, including that you won't be able to change any settings until the window ends. Click **Continue** to save, or **Go back** to change the hours. Nothing is saved and nothing is locked until you continue. If the window includes the current time, the lock starts immediately. Otherwise it starts at the **From** time.
 
 The gear button at the top left of the popup slides out the **Also block** panel, where you choose what else to hide. Close it with the arrow in the same spot or with Esc, and it slides back. Flipping a switch only changes a draft: press **Save** at the bottom of the panel to store it, and the panel closes. Leaving with the arrow or Esc throws the draft away. During the lock you can turn more switches on and save them, and each saved one gets a padlock because it stays on until the window ends; the ones already on can't be turned off. The **Subscriptions** switch works. The **Shorts** switch is visual only for now.
@@ -80,6 +82,7 @@ src/
     schedule-form.js     From/To fields: typing, arrow keys, validation
     confirm-dialog.js    The "lock in this schedule?" popup
     timeline.js          The 24-hour bar
+    timeline-drag.js     Dragging the bar and its grips to set the hours
     headline.js          The big title
     message.js           The line of text under the form
     dom.js               Small DOM helpers

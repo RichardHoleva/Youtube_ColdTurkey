@@ -2,10 +2,31 @@
 .timeline-scale { position: relative; height: 32px; }
 .timeline-base { position: absolute; left: 0; right: 0; top: 10px; height: 2px; background: var(--track); }
 .timeline-bar { position: absolute; top: 5px; height: 12px; background: var(--ink); }
-.timeline-ticks { position: absolute; left: 0; right: 0; top: 21px; height: 10px; }
+.timeline-ticks { position: absolute; left: 0; right: 0; top: 21px; height: 10px; pointer-events: none; }
 .timeline-tick { position: absolute; top: 0; width: 1px; height: 5px; background: var(--tick); transform: translateX(-50%); }
 .timeline-tick.major { height: 10px; background: var(--tick-major); }
-.timeline-now { position: absolute; top: 0; width: 2px; height: 32px; margin-left: -1px; background: var(--accent); }
+.timeline-now { position: absolute; top: 0; width: 2px; height: 32px; margin-left: -1px; background: var(--accent); pointer-events: none; }
+
+/* Dragging. While the hours can be changed the bar moves as a whole, a grip sits on each end,
+   and the bare track pulls the nearer end to wherever it is pressed. */
+.timeline[data-editable="true"] .timeline-scale { cursor: pointer; touch-action: none; user-select: none; }
+.timeline[data-editable="true"] .timeline-bar { cursor: grab; }
+.timeline[data-editable="true"] .timeline-bar::before { content: ""; position: absolute; inset: -9px 0; } /* a taller target than the 12px bar */
+.timeline-scale[data-dragging="move"], .timeline-scale[data-dragging="move"] .timeline-bar { cursor: grabbing; }
+.timeline-scale[data-dragging="start"], .timeline-scale[data-dragging="end"] { cursor: ew-resize; }
+
+/* The grip is a bar-coloured tab with a notch, ringed in the page colour so it stands out
+   against the bar. The box is wider than the tab so it is easy to grab. */
+.timeline-handle { position: absolute; top: 0; width: 20px; height: 22px; margin-left: -10px; cursor: ew-resize; outline: none; }
+.timeline-handle::after {
+  content: ""; position: absolute; inset: 0 6px; border-radius: 2px; box-shadow: 0 0 0 2px var(--bg);
+  background: linear-gradient(var(--bg), var(--bg)) center / 2px 8px no-repeat, var(--grip, var(--ink));
+}
+.timeline-handle:hover, .timeline-handle:focus-visible,
+.timeline-scale[data-dragging="move"] .timeline-handle,
+.timeline-scale[data-dragging="start"] .timeline-handle[data-edge="start"],
+.timeline-scale[data-dragging="end"] .timeline-handle[data-edge="end"] { --grip: var(--accent); }
+.timeline-handle:focus-visible::after { outline: 2px solid var(--ink); outline-offset: 3px; }
 .timeline-labels { position: relative; height: 16px; margin-top: 8px; font: 400 12px/16px var(--mono); color: var(--muted); }
 .timeline-labels span { position: absolute; left: calc(var(--at) * 100%); transform: translateX(calc(var(--at) * -100%)); }
 .timeline-labels span:nth-child(2), .timeline-labels span:nth-child(3), .timeline-labels span:nth-child(4) { transform: translateX(-50%); }

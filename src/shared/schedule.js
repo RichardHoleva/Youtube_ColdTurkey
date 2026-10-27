@@ -51,6 +51,18 @@
     return hours < 24 && mins < 60 ? `${pad(hours)}:${pad(mins)}` : null;
   }
 
+  // Minutes since midnight back to "HH:mm". Wraps around midnight in both directions.
+  function fromMinutes(total) {
+    const wrapped = ((Math.round(total) % DAY_MINUTES) + DAY_MINUTES) % DAY_MINUTES;
+    return `${pad(Math.floor(wrapped / 60))}:${pad(wrapped % 60)}`;
+  }
+
+  // Slides the whole window by `delta` minutes, keeping its length.
+  function shift(value, delta) {
+    const schedule = normalize(value);
+    return { start: fromMinutes(minutes(schedule.start) + delta), end: fromMinutes(minutes(schedule.end) + delta) };
+  }
+
   // The window as [from, to] minute pairs on a 0-1440 axis; an overnight window is split at midnight.
   function segments(value) {
     const schedule = normalize(value);
@@ -85,7 +97,8 @@
 
   const api = Object.freeze({
     DEFAULT_SCHEDULE, DAY_MINUTES, validate, normalize, saved,
-    isActive, nextTransition, minutesOfDay, timeLabel, parseTime, segments
+    isActive, nextTransition, minutesOfDay, timeLabel, parseTime, segments,
+    toMinutes: minutes, fromMinutes, shift
   });
   root.FocusSchedule = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
