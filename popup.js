@@ -18,9 +18,15 @@
   const timelineBars = Array.from(document.querySelectorAll(".timeline-bar"));
   const timelineNow = document.getElementById("timeline-now");
   const formMessage = document.getElementById("form-message");
+  const confirmDialog = document.getElementById("confirm");
+  const confirmTitle = document.getElementById("confirm-title");
+  const confirmBody = document.getElementById("confirm-body");
+  const confirmCancel = document.getElementById("confirm-cancel");
+  const confirmContinue = document.getElementById("confirm-continue");
   const DAY_MINUTES = 24 * 60;
   const RETRY_TICKS = 3;
-  let schedule = FocusSchedule.normalize(null);
+  let schedule = null; // the saved schedule; null until the user saves one
+  let pendingDraft = null; // the schedule waiting for the user's confirmation
   let loaded = false;
   let loadFailed = false;
   let saving = false;
@@ -61,8 +67,12 @@
   function paintMessage() {
     const from = FocusSchedule.parseTime(startInput.value);
     const to = FocusSchedule.parseTime(endInput.value);
-    const hint = !message.text && !startInput.hidden && from !== null && to !== null && from > to;
-    setText(formMessage, message.text || (hint ? "Runs through midnight." : ""));
+    let hint = "";
+    if (!message.text && !startInput.hidden) {
+      if (from !== null && to !== null && from > to) hint = "Runs through midnight.";
+      else if (loaded && !schedule) hint = "Nothing is blocked until you save.";
+    }
+    setText(formMessage, message.text || hint);
     const kind = message.text ? message.kind : "";
     formMessage.classList.toggle("success", kind === "success");
     formMessage.classList.toggle("error", kind === "error");
@@ -76,12 +86,14 @@
   }
 
   function adoptSchedule(value, forceInputs = false) {
-    const next = FocusSchedule.normalize(value);
-    const changed = next.start !== schedule.start || next.end !== schedule.end;
+    const next = FocusSchedule.saved(value);
+    const changed = next?.start !== schedule?.start || next?.end !== schedule?.end;
     schedule = next;
     if (changed || forceInputs) {
-      startInput.value = schedule.start;
-      endInput.value = schedule.end;
+      // Before anything is saved, the inputs hold the default hours as a starting suggestion.
+      const shown = schedule ?? FocusSchedule.DEFAULT_SCHEDULE;
+      startInput.value = shown.start;
+      endInput.value = shown.end;
       markInvalid();
     }
   }
@@ -105,7 +117,7 @@
     const clock = FocusSchedule.timeLabel(now);
     setStyle(timelineNow, "left", percent(nowMinutes));
     // Real saved times only: the bar is hidden until the schedule has loaded.
-    const pairs = loaded ? FocusSchedule.segments(schedule) : [];
+    const pairs = loaded && schedule ? FocusSchedule.segments(schedule) : [];
     timelineBars.forEach((bar, index) => {
       const pair = pairs[index];
       bar.hidden = !pair;
@@ -113,7 +125,7 @@
       setStyle(bar, "left", percent(pair[0]));
       setStyle(bar, "width", percent(pair[1] - pair[0]));
     });
-    setAttribute(timeline, "aria-label", loaded
+    setAttribute(timeline, "aria-label", loaded && schedule
       ? `24-hour timeline. Focus from ${schedule.start} to ${schedule.end}. Now ${clock}.`
       : `24-hour timeline. Now ${clock}.`);
   }
@@ -130,11 +142,13 @@
     }
     if (loaded) lastActive = active;
 
-    const state = !loaded ? (loadFailed ? "error" : "loading") : active ? "locked" : "open";
+    // "setup" is a fresh install: nothing saved, so nothing is locked yet.
+    const state = !loaded ? (loadFailed ? "error" : "loading") : active ? "locked" : schedule ? "open" : "setup";
     if (document.body.dataset.state !== state) document.body.dataset.state = state;
 
     if (state === "loading") setHeadline("Loading", "schedule…");
     else if (state === "error") setHeadline("Can’t load", "schedule.");
+    else if (state === "setup") setHeadline("Set your", "focus hours.");
     else {
       const next = FocusSchedule.timeLabel(FocusSchedule.nextTransition(schedule, now));
       setHeadline(active ? "No feed" : "Feed is open", "until", next);
@@ -146,12 +160,25 @@
     startInput.disabled = endInput.disabled = saveButton.disabled = disabled;
     startInput.hidden = endInput.hidden = saveButton.hidden = locked;
     startValue.hidden = endValue.hidden = lockStatus.hidden = !locked;
-    setText(startValue, schedule.start);
-    setText(endValue, schedule.end);
+    setText(startValue, schedule?.start ?? "");
+    setText(endValue, schedule?.end ?? "");
     setText(saveButton, saving ? "Saving…" : "Save");
+
+    // The lock took over while the confirmation was open: it can no longer be saved.
+    if (locked && confirmDialog.open) confirmDialog.close();
+    if (pendingDraft) paintConfirm(now);
 
     renderTimeline(now);
     paintMessage();
+  }
+
+  // The wording follows the clock: the window may start before the user presses Continue.
+  function paintConfirm(now) {
+    const active = FocusSchedule.isActive(pendingDraft, now);
+    setText(confirmTitle, active ? "Start focus now?" : "Lock in this schedule?");
+    setText(confirmBody, active
+      ? `YouTube’s feed will be hidden until ${pendingDraft.end}. You won’t be able to change or stop it before then.`
+      : `Focus starts at ${pendingDraft.start} and repeats every day. Once it starts, you won’t be able to change or stop it until ${pendingDraft.end}.`);
   }
 
   async function refresh() {
@@ -196,6 +223,14 @@
       return;
     }
 
+    // Nothing is saved, and no lock starts, until the user confirms.
+    pendingDraft = draft;
+    paintConfirm(now);
+    confirmDialog.showModal();
+  });
+
+  async function commitSchedule(draft) {
+    if (!loaded || saving) return;
     saving = true;
     showMessage("");
     render();
@@ -205,9 +240,10 @@
       if (!response || !response.ok) {
         showMessage(response && response.message ? response.message : "Couldn’t save the schedule. Try again.", "error");
       } else {
-        showMessage(FocusSchedule.isActive(schedule, new Date())
+        const now = new Date();
+        showMessage(FocusSchedule.isActive(schedule, now)
           ? "Saved. Focus is active and the schedule is locked."
-          : "Saved. The schedule repeats every day.", "success");
+          : `Saved. Focus starts at ${schedule.start} and repeats every day.`, "success");
       }
     } catch (_error) {
       showMessage("Couldn’t save the schedule. Reopen this popup and try again.", "error");
@@ -215,7 +251,16 @@
       saving = false;
       render();
     }
+  }
+
+  confirmCancel.addEventListener("click", () => confirmDialog.close());
+  confirmContinue.addEventListener("click", () => {
+    const draft = pendingDraft;
+    confirmDialog.close();
+    if (draft) void commitSchedule(draft);
   });
+  // Also runs for Escape and for the lock taking over, so a stale draft is never kept.
+  confirmDialog.addEventListener("close", () => { pendingDraft = null; });
 
   // 24-hour entry that does not depend on the browser's locale.
   function stepTime(input, delta) {

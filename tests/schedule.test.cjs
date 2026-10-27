@@ -27,6 +27,16 @@ test('default schedule and normalization reject malformed storage safely', () =>
   assert.deepEqual(plain(schedule.normalize(night)), night);
 });
 
+test('nothing saved means no lock: saved() never falls back to the default', () => {
+  assert.deepEqual(plain(schedule.saved(day)), day);
+  assert.deepEqual(plain(schedule.saved({ ...night, extra: true })), night);
+  for (const value of [undefined, null, {}, '08:00', [], { start: '08:00', end: '08:00' }, { start: '24:00', end: '20:00' }]) {
+    assert.equal(schedule.saved(value), null, JSON.stringify(value));
+    assert.equal(schedule.isActive(value, local('2026-10-24T14:00:00')), false, JSON.stringify(value));
+    assert.equal(schedule.nextTransition(value, local('2026-10-24T14:00:00')), null, JSON.stringify(value));
+  }
+});
+
 test('validation uses strict HH:MM and rejects a zero-length interval', () => {
   assert.equal(schedule.validate(day), true);
   assert.equal(schedule.validate(night), true);

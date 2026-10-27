@@ -61,6 +61,15 @@ button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 button:disabled { background: #9c9992; color: var(--bg); cursor: default; }
 .lock-status { display: flex; align-items: center; gap: 6px; height: 46px; color: var(--muted); font-size: 13px; }
 
+.confirm { width: 340px; max-width: calc(100% - 32px); padding: 22px; border: 1px solid var(--ink); border-radius: 4px; background: var(--bg); color: var(--ink); }
+.confirm::backdrop { background: rgb(21 21 21 / .5); }
+.confirm h2 { margin: 0 0 10px; font: 700 22px/1.1 var(--sans); letter-spacing: -.03em; }
+.confirm p { font-size: 14px; line-height: 1.45; }
+.confirm-actions { display: flex; gap: 10px; margin-top: 20px; }
+.confirm-actions button { flex: 1 1 0; }
+button.secondary { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--outline); }
+button.secondary:hover:enabled { background: var(--field); }
+
 .message { min-height: 18px; margin-top: 10px; font-size: 13px; line-height: 18px; color: var(--muted); }
 .message.success { color: var(--ink); font-weight: 600; }
 .message.error { color: var(--accent-ink); font-weight: 600; }

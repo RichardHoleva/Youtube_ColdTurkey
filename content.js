@@ -6,7 +6,7 @@
   const PAGE_ATTRIBUTE = "data-yfl-page";
   const NOTICE_ID = "yfl-focus-notice";
   const HEARTBEAT_MS = 10_000;
-  let schedule = FocusSchedule.normalize(null);
+  let schedule = null; // stays null, and nothing is hidden, until the user saves hours
   let boundaryTimer;
   let pendingRefresh;
   let notice;
@@ -96,12 +96,15 @@
     // The local clock is authoritative, including after sleep or a clock change.
     if (reschedule || boundaryTimer === undefined) {
       clearTimeout(boundaryTimer);
+      boundaryTimer = undefined;
       const next = FocusSchedule.nextTransition(schedule, now);
-      nextChangeLabel = FocusSchedule.timeLabel(next);
-      boundaryTimer = setTimeout(() => {
-        boundaryTimer = undefined;
-        refresh(true);
-      }, Math.max(50, next.getTime() - now.getTime() + 25));
+      nextChangeLabel = next ? FocusSchedule.timeLabel(next) : "";
+      if (next) {
+        boundaryTimer = setTimeout(() => {
+          boundaryTimer = undefined;
+          refresh(true);
+        }, Math.max(50, next.getTime() - now.getTime() + 25));
+      }
     }
 
     if (active && page === "home") {
@@ -123,7 +126,7 @@
     try {
       chrome.storage.local.get("schedule", (stored) => {
         if (chrome.runtime.lastError) return;
-        schedule = FocusSchedule.normalize(stored.schedule);
+        schedule = FocusSchedule.saved(stored.schedule);
         refresh(true);
       });
     } catch {
@@ -133,13 +136,13 @@
 
   chrome.storage.onChanged.addListener((changes, areaName) => {
     if (areaName !== "local" || !changes.schedule) return;
-    schedule = FocusSchedule.normalize(changes.schedule.newValue);
+    schedule = FocusSchedule.saved(changes.schedule.newValue);
     refresh(true);
   });
 
   chrome.runtime.onMessage.addListener((message) => {
-    if (message?.type !== "FOCUS_STATE" || !message.state?.schedule) return;
-    schedule = FocusSchedule.normalize(message.state.schedule);
+    if (message?.type !== "FOCUS_STATE" || !message.state) return;
+    schedule = FocusSchedule.saved(message.state.schedule);
     refresh(true);
   });
 

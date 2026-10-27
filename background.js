@@ -13,22 +13,20 @@ function enqueue(job) {
   return result;
 }
 
+// null until the user has saved a schedule. A fresh install is not locked.
 async function readSchedule() {
   const stored = await chrome.storage.local.get("schedule");
-  const schedule = FocusSchedule.normalize(stored.schedule);
-  if (!FocusSchedule.validate(stored.schedule)) {
-    await chrome.storage.local.set({ schedule });
-  }
-  return schedule;
+  return FocusSchedule.saved(stored.schedule);
 }
 
 function makeState(schedule) {
   const now = new Date();
+  const next = FocusSchedule.nextTransition(schedule, now);
   return {
     schedule,
     active: FocusSchedule.isActive(schedule, now),
     now: now.getTime(),
-    nextChange: FocusSchedule.nextTransition(schedule, now).getTime()
+    nextChange: next ? next.getTime() : null
   };
 }
 
@@ -37,19 +35,28 @@ async function ensureAlarms(state) {
   if (!heartbeat || heartbeat.periodInMinutes !== 1) {
     await chrome.alarms.create(HEARTBEAT, { periodInMinutes: 1 });
   }
+  if (state.nextChange === null) {
+    await chrome.alarms.clear(BOUNDARY);
+    return;
+  }
   const boundary = await chrome.alarms.get(BOUNDARY);
   if (!boundary || Math.abs(boundary.scheduledTime - state.nextChange) > 1000) {
     await chrome.alarms.create(BOUNDARY, { when: state.nextChange });
   }
 }
 
+function titleFor(state) {
+  if (!state.schedule) return "Focus Lock: set your focus hours";
+  const until = FocusSchedule.timeLabel(new Date(state.nextChange));
+  return state.active ? `Focus Lock: no feed until ${until}` : `Focus Lock: feed is open until ${until}`;
+}
+
 async function publish(state) {
   await Promise.allSettled([
-    chrome.action.setBadgeText({ text: state.active ? "ON" : "" }),
+    // "SET" nudges a new user to open the popup and choose their hours.
+    chrome.action.setBadgeText({ text: !state.schedule ? "SET" : state.active ? "ON" : "" }),
     chrome.action.setBadgeBackgroundColor({ color: "#e5481a" }),
-    chrome.action.setTitle({ title: state.active
-      ? `Focus Lock: no feed until ${FocusSchedule.timeLabel(new Date(state.nextChange))}`
-      : `Focus Lock: feed is open until ${FocusSchedule.timeLabel(new Date(state.nextChange))}` }),
+    chrome.action.setTitle({ title: titleFor(state) }),
     (async () => {
       const tabs = await chrome.tabs.query({ url: YOUTUBE_URLS });
       await Promise.allSettled(tabs.filter(tab => tab.id !== undefined).map(tab =>

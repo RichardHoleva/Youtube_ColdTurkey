@@ -8,8 +8,9 @@ Think of it as a cold-turkey blocker for the recommendation algorithm, not for Y
 
 - **Hides the home feed** and the recommendations next to the video, but only inside your focus window.
 - **Leaves the useful parts alone:** search, the player, comments, playlist controls, subscriptions and channel pages.
+- **Does nothing until you set it up.** A fresh install blocks nothing. You choose your hours first, and the lock starts only after you save and confirm.
 - **Locks its own settings** while the window is active, so you can't just change the schedule when the urge hits. It unlocks when the window ends.
-- **Repeats every day.** The default is 08:00-20:00 in your computer's local time. Overnight windows such as 22:00-06:00 work too.
+- **Repeats every day** in your computer's local time. Overnight windows such as 22:00-06:00 work too.
 - **Stays private.** The schedule is stored locally in your browser, with no accounts, servers or tracking.
 
 ## Install
@@ -24,7 +25,9 @@ The extension is not on the Chrome Web Store, so you load it manually:
 
 ## Usage
 
-Click the extension icon outside the focus window, enter **From** and **To** times in 24-hour `HH:mm` format (typing `8` or `815` is fine), and click **Save**. If the new window includes the current time, it starts immediately and the settings lock.
+After installing, the toolbar icon shows a **SET** badge until you choose your hours. Click the icon, enter **From** and **To** times in 24-hour `HH:mm` format (typing `8` or `815` is fine; 08:00 and 20:00 are pre-filled as a suggestion), and click **Save**.
+
+A confirmation popup explains what will happen. Click **Continue** to save, or **Go back** to change the hours. Nothing is saved and nothing is locked until you continue. If the window includes the current time, the lock starts immediately and you can't change or stop it until the window ends. Otherwise it starts at the **From** time.
 
 The start time is included and the end time is not: with 08:00-20:00, blocking begins at 08:00 and ends at 20:00. Start and end can't be the same time.
 

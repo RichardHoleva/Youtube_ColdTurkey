@@ -17,6 +17,12 @@
     return { start: schedule.start, end: schedule.end };
   }
 
+  // The schedule the user actually saved, or null until they have saved one.
+  // Unlike normalize(), this never falls back to DEFAULT_SCHEDULE: no lock without a save.
+  function saved(value) {
+    return validate(value) ? { start: value.start, end: value.end } : null;
+  }
+
   function minutes(time) {
     return Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
   }
@@ -57,15 +63,18 @@
   }
 
   function isActive(value, now = new Date()) {
-    const schedule = normalize(value);
+    // Nothing saved yet (or unreadable storage) means nothing is locked.
+    if (!validate(value)) return false;
     const current = now.getHours() * 60 + now.getMinutes();
-    const start = minutes(schedule.start);
-    const end = minutes(schedule.end);
+    const start = minutes(value.start);
+    const end = minutes(value.end);
     // Start is inclusive, end exclusive; an overnight window crosses midnight.
     return start < end ? current >= start && current < end : current >= start || current < end;
   }
 
+  // The next moment the lock switches on or off, or null when no schedule is saved.
   function nextTransition(value, now = new Date()) {
+    if (!validate(value)) return null;
     const schedule = normalize(value);
     const active = isActive(schedule, now);
     // Walk real minutes, including repeated/skipped local minutes at DST changes.
@@ -78,7 +87,7 @@
     throw new Error("No schedule transition found.");
   }
 
-  const api = Object.freeze({ DEFAULT_SCHEDULE, validate, normalize, isActive, nextTransition, minutesOfDay, timeLabel, parseTime, segments });
+  const api = Object.freeze({ DEFAULT_SCHEDULE, validate, normalize, saved, isActive, nextTransition, minutesOfDay, timeLabel, parseTime, segments });
   root.FocusSchedule = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(globalThis);

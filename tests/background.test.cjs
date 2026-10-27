@@ -63,6 +63,7 @@ async function worker({ initial = {}, time = '2026-10-24T14:00:00', brokenTabs =
     alarms: {
       onAlarm: event(),
       async get(name) { return alarms.get(name); },
+      async clear(name) { return alarms.delete(name); },
       async create(name, details) {
         alarms.set(name, { name, scheduledTime: details.when ?? currentTime + details.periodInMinutes * 60000, ...details });
       }
@@ -113,18 +114,63 @@ async function worker({ initial = {}, time = '2026-10-24T14:00:00', brokenTabs =
   };
 }
 
-test('fresh worker persists defaults, creates alarms and publishes current state', async () => {
+test('fresh install is not locked: nothing is stored, no boundary alarm, badge asks for setup', async () => {
+  // 14:00 is inside the old default window, which used to lock a new user immediately.
   const app = await worker();
-  assert.deepEqual(app.storage.schedule, day);
+  assert.equal(app.storage.schedule, undefined);
+  assert.equal(app.writes.length, 0);
   assert.equal(app.alarms.get('focus-clock-check').periodInMinutes, 1);
-  assert.equal(app.alarms.get('focus-next-transition').scheduledTime, new Date('2026-10-24T20:00:00').getTime());
-  assert.equal(app.badges.at(-1), 'ON');
-  assert.equal(app.broadcasts.at(-1).message.state.active, true);
+  assert.equal(app.alarms.has('focus-next-transition'), false);
+  assert.equal(app.badges.at(-1), 'SET');
+  assert.equal(app.titles.at(-1), 'Focus Lock: set your focus hours');
+  assert.equal(app.broadcasts.at(-1).message.state.active, false);
+  assert.equal(app.broadcasts.at(-1).message.state.schedule, null);
   const response = await app.message({ type: 'GET_STATE' });
   assert.equal(response.ok, true);
-  assert.deepEqual(response.state.schedule, day);
+  assert.equal(response.state.schedule, null);
+  assert.equal(response.state.active, false);
+  assert.equal(response.state.nextChange, null);
+  assert.equal(app.writes.length, 0);
+});
+
+test('first save starts the lock right away when the window includes now', async () => {
+  const app = await worker();
+  const response = await app.message({ type: 'SAVE_SCHEDULE', schedule: day });
+  assert.equal(response.ok, true);
   assert.equal(response.state.active, true);
-  assert.equal(app.writes.length, 1);
+  assert.deepEqual(app.storage.schedule, day);
+  await app.flush();
+  assert.equal(app.badges.at(-1), 'ON');
+  assert.equal(app.broadcasts.at(-1).message.state.active, true);
+  assert.equal(app.alarms.get('focus-next-transition').scheduledTime, new Date('2026-10-24T20:00:00').getTime());
+  const locked = await app.message({ type: 'SAVE_SCHEDULE', schedule: night });
+  assert.equal(locked.code, 'LOCKED');
+  assert.equal(locked.message, 'Schedule is locked until 20:00.');
+  assert.deepEqual(app.storage.schedule, day);
+});
+
+test('first save outside the window arms the lock for its start without locking yet', async () => {
+  const app = await worker({ time: '2026-10-24T21:00:00' });
+  const response = await app.message({ type: 'SAVE_SCHEDULE', schedule: day });
+  assert.equal(response.ok, true);
+  assert.equal(response.state.active, false);
+  await app.flush();
+  assert.equal(app.badges.at(-1), '');
+  assert.equal(app.titles.at(-1), 'Focus Lock: feed is open until 08:00');
+  assert.equal(app.alarms.get('focus-next-transition').scheduledTime, new Date('2026-10-25T08:00:00').getTime());
+  app.setTime('2026-10-25T08:00:00');
+  app.chrome.alarms.onAlarm.emit({ name: 'focus-next-transition' });
+  await app.flush();
+  assert.equal(app.badges.at(-1), 'ON');
+  assert.equal((await app.message({ type: 'SAVE_SCHEDULE', schedule: night })).code, 'LOCKED');
+});
+
+test('unreadable stored schedule counts as not set up and is left alone', async () => {
+  const app = await worker({ initial: { schedule: { start: '25:00', end: '20:00' } } });
+  assert.equal((await app.message({ type: 'GET_STATE' })).state.schedule, null);
+  assert.equal(app.badges.at(-1), 'SET');
+  assert.equal(app.writes.length, 0);
+  assert.equal((await app.message({ type: 'SAVE_SCHEDULE', schedule: night })).ok, true);
 });
 
 test('active lock rejects schedule writes at the worker boundary', async () => {
