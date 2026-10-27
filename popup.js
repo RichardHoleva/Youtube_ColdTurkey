@@ -112,12 +112,20 @@
     if (time !== undefined) setText(headlineTime, time);
   }
 
-  function renderTimeline(now) {
+  // The hours currently typed into the inputs, or null while they don't form a valid interval.
+  function draftSchedule() {
+    const draft = { start: FocusSchedule.parseTime(startInput.value), end: FocusSchedule.parseTime(endInput.value) };
+    return FocusSchedule.validate(draft) ? draft : null;
+  }
+
+  // `shown` is the interval to draw: the typed draft while editing, so the bar previews
+  // the hours before they are saved, otherwise the saved schedule.
+  function renderTimeline(now, shown) {
     const nowMinutes = FocusSchedule.minutesOfDay(now);
     const clock = FocusSchedule.timeLabel(now);
     setStyle(timelineNow, "left", percent(nowMinutes));
-    // Real saved times only: the bar is hidden until the schedule has loaded.
-    const pairs = loaded && schedule ? FocusSchedule.segments(schedule) : [];
+    // The bar stays hidden until the schedule has loaded.
+    const pairs = loaded && shown ? FocusSchedule.segments(shown) : [];
     timelineBars.forEach((bar, index) => {
       const pair = pairs[index];
       bar.hidden = !pair;
@@ -125,8 +133,9 @@
       setStyle(bar, "left", percent(pair[0]));
       setStyle(bar, "width", percent(pair[1] - pair[0]));
     });
-    setAttribute(timeline, "aria-label", loaded && schedule
-      ? `24-hour timeline. Focus from ${schedule.start} to ${schedule.end}. Now ${clock}.`
+    const unsaved = shown && (!schedule || shown.start !== schedule.start || shown.end !== schedule.end);
+    setAttribute(timeline, "aria-label", loaded && shown
+      ? `24-hour timeline. ${unsaved ? "Unsaved focus" : "Focus"} from ${shown.start} to ${shown.end}. Now ${clock}.`
       : `24-hour timeline. Now ${clock}.`);
   }
 
@@ -168,7 +177,7 @@
     if (locked && confirmDialog.open) confirmDialog.close();
     if (pendingDraft) paintConfirm(now);
 
-    renderTimeline(now);
+    renderTimeline(now, locked ? schedule : draftSchedule() ?? schedule);
     paintMessage();
   }
 
