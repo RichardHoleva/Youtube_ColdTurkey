@@ -4,26 +4,29 @@ import { byId, setText } from "./dom.js";
 import { setHeadline } from "./headline.js";
 import { NO_MESSAGE, paintMessage, setMessageHint, showMessage } from "./message.js";
 import { draftDiffersFrom, draftSchedule, listen, readDraft, renderForm, showSchedule, takeDraft } from "./schedule-form.js";
-import "./settings/drawer.js";
-import { listenToOptions, setOptionsLocked, showOptions } from "./settings/options.js";
-import { addOnlyNotice, isLocked, keptBlockedNotice, lockedNotice, state } from "./state.js";
+import { closeDrawer, onDrawerChange } from "./settings/drawer.js";
+import { listenToOptions, optionsDiffer, setOptionsBusy, showOptions, showSealed } from "./settings/options.js";
+import { addOnlyNotice, isLocked, keptBlockedNotice, lockedNotice, savedWhileLockedNotice, state } from "./state.js";
 import "./theme/theme-switch.js";
 import { renderTimeline } from "./timeline.js";
 
 const RETRY_TICKS = 3;
 const clockTime = byId("clock-time");
 let wasLocked = null;
+let savingOptions = false;
 let retryCountdown = RETRY_TICKS;
 
-// Takes what the background worker reports. `resetInputs` also puts the typed hours back
-// to the saved ones.
+// Takes what the background worker reports. `resetInputs` also puts the typed hours and the
+// switches back to the saved ones; otherwise they only follow when the saved values changed.
 function adopt(stored, resetInputs = false) {
   const schedule = FocusSchedule.saved(stored.schedule);
-  const changed = schedule?.start !== state.schedule?.start || schedule?.end !== state.schedule?.end;
+  const options = FocusOptions.normalize(stored.options);
+  const scheduleChanged = schedule?.start !== state.schedule?.start || schedule?.end !== state.schedule?.end;
+  const optionsChanged = FocusOptions.KEYS.some((key) => options[key] !== state.options[key]);
   state.schedule = schedule;
-  state.options = FocusOptions.normalize(stored.options);
-  if (changed || resetInputs) showSchedule(schedule);
-  showOptions(state.options);
+  state.options = options;
+  if (scheduleChanged || resetInputs) showSchedule(schedule);
+  if (optionsChanged || resetInputs) showOptions(options);
 }
 
 function adoptResponse(response) {
@@ -47,8 +50,9 @@ function renderHeadline(view, now) {
 // A draft can't survive into a locked window, and a "locked until" message must not outlive it.
 function trackLockChange(locked) {
   if (!state.loaded) return;
-  if (locked && wasLocked === false && draftDiffersFrom(state.schedule)) {
+  if (locked && wasLocked === false && (draftDiffersFrom(state.schedule) || optionsDiffer(state.options))) {
     showSchedule(state.schedule);
+    showOptions(state.options);
     showMessage("Focus has started. Unsaved changes were discarded.");
   }
   if (!locked && wasLocked === true) showMessage("Focus has ended. Settings are unlocked.");
@@ -65,7 +69,8 @@ function render() {
   if (document.body.dataset.state !== view) document.body.dataset.state = view;
   renderHeadline(view, now);
   renderForm({ schedule: state.schedule, locked, disabled: !state.loaded || state.saving || locked, saving: state.saving });
-  setOptionsLocked(locked);
+  showSealed((name) => locked && state.options[name]);
+  setOptionsBusy(!state.loaded || savingOptions);
 
   if (locked) closeConfirm();
   refreshConfirm(now);
@@ -143,20 +148,31 @@ async function commitSchedule(draft) {
   }
 }
 
-// Switches save as soon as they are flipped. If saving fails they go back to what is stored.
+// Save in the drawer: on success the drawer closes and the main page says what happened. On a
+// refusal it stays open, with the reason under the switches.
 async function commitOptions(options) {
-  if (state.loaded) {
-    showMessage("");
-    try {
-      const response = await api.saveOptions(options);
-      adoptResponse(response);
-      if (!response?.ok) showMessage(response?.message ?? "Couldn’t save the settings. Try again.", "error");
-    } catch {
-      showMessage("Couldn’t save the settings. Reopen this popup and try again.", "error");
-    }
-  }
-  showOptions(state.options);
+  if (!state.loaded || savingOptions) return;
+  const before = state.options;
+  savingOptions = true;
+  showMessage("");
   render();
+  try {
+    const response = await api.saveOptions(options);
+    adoptResponse(response);
+    if (response?.ok) {
+      const changed = FocusOptions.KEYS.some((key) => state.options[key] !== before[key]);
+      closeDrawer();
+      const now = new Date();
+      if (changed) showMessage(isLocked(now) ? savedWhileLockedNotice(now) : "Saved.", "success");
+    } else {
+      showMessage(response?.message ?? "Couldn’t save the settings. Try again.", "error");
+    }
+  } catch {
+    showMessage("Couldn’t save the settings. Reopen this popup and try again.", "error");
+  } finally {
+    savingOptions = false;
+    render();
+  }
 }
 
 function reportRefusedChange() {
@@ -174,7 +190,20 @@ listen({
   onBlur: paintMessage
 });
 onConfirm(commitSchedule);
-listenToOptions({ isLocked: () => isLocked(new Date()), onChange: commitOptions, onRefused: reportRefusedChange });
+listenToOptions({
+  isSealed: (name) => isLocked(new Date()) && state.options[name],
+  onEdit: () => {
+    showMessage("");
+    render();
+  },
+  onRefused: reportRefusedChange,
+  onSave: commitOptions
+});
+// Leaving the drawer drops anything that wasn't saved, and opening it starts with a clean line.
+onDrawerChange((open) => {
+  showMessage("");
+  if (!open) showOptions(state.options);
+});
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && (changes.schedule || changes.options)) void refresh();

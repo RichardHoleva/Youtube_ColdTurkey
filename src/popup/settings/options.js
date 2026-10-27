@@ -1,6 +1,7 @@
-import { setAttribute } from "../dom.js";
+import { byId, setAttribute } from "../dom.js";
 
 const inputs = Array.from(document.querySelectorAll(".option-input"));
+const saveButton = byId("drawer-save");
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const SHAKE = [0, -4, 4, -3, 0].map((x) => ({ transform: `translateX(${x}px)` }));
 
@@ -12,9 +13,18 @@ export function showOptions(options) {
   for (const input of inputs) input.checked = options[input.dataset.option] === true;
 }
 
-// During the lock a switch that is on can't be turned off; the ones that are off stay free.
-export function setOptionsLocked(locked) {
-  for (const input of inputs) setAttribute(input, "aria-disabled", String(locked && input.checked));
+// True when the switches show something other than the saved options.
+export function optionsDiffer(saved) {
+  return inputs.some((input) => input.checked !== (saved[input.dataset.option] === true));
+}
+
+// A sealed switch is one that is saved as on during the lock: it can't be turned off.
+export function showSealed(isSealed) {
+  for (const input of inputs) setAttribute(input, "aria-disabled", String(isSealed(input.dataset.option)));
+}
+
+export function setOptionsBusy(busy) {
+  if (saveButton.disabled !== busy) saveButton.disabled = busy;
 }
 
 function shake(input) {
@@ -22,19 +32,20 @@ function shake(input) {
   input.closest(".option").querySelector(".toggle").animate(SHAKE, { duration: 320, easing: "ease-out" });
 }
 
-// onChange gets the new options after the user flips a switch; onRefused runs when they try to
-// switch off a block during the lock.
-export function listenToOptions({ isLocked, onChange, onRefused }) {
+// Flipping a switch only changes the draft. onEdit runs after each flip, onRefused when someone
+// tries to switch off a sealed one, and onSave gets the options when Save is pressed.
+export function listenToOptions({ isSealed, onEdit, onRefused, onSave }) {
   for (const input of inputs) {
     // Not `disabled`: a disabled control swallows the click, and then nobody learns why.
     // Cancelling the click also covers Space and puts the switch back where it was. By the time
     // this runs `checked` already holds the new value, so unchecked means it was just switched off.
     input.addEventListener("click", (event) => {
-      if (!isLocked() || input.checked) return;
+      if (input.checked || !isSealed(input.dataset.option)) return;
       event.preventDefault();
       shake(input);
       onRefused();
     });
-    input.addEventListener("change", () => onChange(readOptions()));
+    input.addEventListener("change", onEdit);
   }
+  saveButton.addEventListener("click", () => onSave(readOptions()));
 }
