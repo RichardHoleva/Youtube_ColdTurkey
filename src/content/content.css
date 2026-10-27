@@ -140,6 +140,9 @@ html[data-yfl-notice="true"] #yfl-focus-notice {
   color: var(--yfl-ink);
 }
 
+#yfl-focus-notice h2[data-size="medium"] { font-size: 32px; }
+#yfl-focus-notice h2[data-size="small"] { font-size: 26px; }
+
 /* The first line can be a title the user wrote, so it may be long: let it wrap in balanced
    lines instead of overflowing the card. The "until" line below it always stays. */
 #yfl-focus-notice .yfl-notice-line {

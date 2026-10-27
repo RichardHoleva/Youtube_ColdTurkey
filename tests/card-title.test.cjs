@@ -33,16 +33,22 @@ test('empty, blank and non-text values fall back to the default', () => {
 });
 
 test('a long title is cut at the limit and the cut leaves no trailing space', () => {
-  assert.equal(title.MAX_LENGTH, 24);
+  assert.equal(title.MAX_LENGTH, 40);
   const long = 'x'.repeat(100);
-  assert.equal(title.normalize(long), 'x'.repeat(24));
-  assert.equal(title.normalize('a'.repeat(23) + ' b'), 'a'.repeat(23));
-  assert.equal(Array.from(title.normalize('a'.repeat(24))).length, 24);
+  assert.equal(title.normalize(long), 'x'.repeat(40));
+  assert.equal(title.normalize('a'.repeat(39) + ' b'), 'a'.repeat(39));
+  assert.equal(Array.from(title.normalize('a'.repeat(40))).length, 40);
+});
+
+test('a title of exactly the limit is kept whole, and so is a sentence of that length', () => {
+  assert.equal(title.normalize('Deep work now, no scrolling until done!'), 'Deep work now, no scrolling until done!');
+  assert.equal(Array.from('Deep work now, no scrolling until done!').length, 39);
+  assert.equal(title.normalize('1234567890'.repeat(4)), '1234567890'.repeat(4));
 });
 
 test('the limit counts characters, so an emoji is not split in half', () => {
-  const emoji = '😀'.repeat(30);
-  assert.equal(title.normalize(emoji), '😀'.repeat(24));
+  const emoji = '😀'.repeat(50);
+  assert.equal(title.normalize(emoji), '😀'.repeat(40));
 });
 
 test('control characters never reach the card', () => {

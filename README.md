@@ -38,7 +38,7 @@ The gear button at the top left of the popup slides out the **Also block** panel
 
 The sun/moon switch in the top bar changes between light and dark mode. It remembers your choice, starts out following your system setting, and keeps working during a lock. The "No feed until HH:mm" card on YouTube follows the same choice, including live while a YouTube tab is open.
 
-The card's first line is yours to change. Under the big headline, the line **On YouTube: No feed ✎** shows what the home card says. Click it, type your own title (up to 24 characters, so it stays short enough for the card), and press Enter or click away to save. Escape cancels, and an empty box brings back "No feed". It can be changed at any time, even during a lock, and open YouTube tabs update straight away. The second line of every card always says "until HH:mm.", so you can still see when the block ends. The Subscriptions card keeps its own wording, "No subscriptions", with the same "until" line.
+The card's first line is yours to change. Under the big headline, the line **On YouTube: No feed ✎** shows what the home card says. Click it, type your own title (up to 40 characters, enough for a short sentence; longer titles are shown in smaller type so the card stays tidy), and press Enter or click away to save. Escape cancels, and an empty box brings back "No feed". It can be changed at any time, even during a lock, and open YouTube tabs update straight away. The second line of every card always says "until HH:mm.", so you can still see when the block ends. The Subscriptions card keeps its own wording, "No subscriptions", with the same "until" line.
 
 The start time is included and the end time is not: with 08:00-20:00, blocking begins at 08:00 and ends at 20:00. Start and end can't be the same time.
 
@@ -70,7 +70,7 @@ src/
     schedule.js          Time-window rules: parsing, overnight windows, DST-safe transitions
     options.js           The switchable extras (Sidebar, Shorts, Subscriptions) and their validation
     theme.js             Light or dark: a saved choice wins, otherwise follow the system
-    card-title.js        The card's title: default, 24-character limit, tidying
+    card-title.js        The card's title: default, 40-character limit, tidying
   background/            Service worker
     background.js        Entry point: messages, the settings lock, listeners
     state.js             Reads storage and derives the current state

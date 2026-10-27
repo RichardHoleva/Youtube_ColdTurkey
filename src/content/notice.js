@@ -2,6 +2,7 @@
 const FocusNotice = (() => {
   const ID = "yfl-focus-notice";
   let card;
+  let heading;
   let leadLine;
   let timeLabel;
   let pageObserver;
@@ -21,7 +22,7 @@ const FocusNotice = (() => {
     timeLabel = create("span", "yfl-notice-time");
     const tail = create("span", "yfl-notice-line");
     tail.append("until ", timeLabel, ".");
-    const heading = create("h2");
+    heading = create("h2");
     heading.append(leadLine, tail);
 
     card = create("section");
@@ -61,9 +62,18 @@ const FocusNotice = (() => {
     if (node.textContent !== value) node.textContent = value;
   }
 
+  // A long title gets smaller type, so it stays to a line or two and the "until" line below
+  // it is never pushed far down. The size is a CSS rule keyed on this attribute.
+  function setSize(lead) {
+    const length = Array.from(lead).length;
+    const size = length > 30 ? "small" : length > 20 ? "medium" : "large";
+    if (heading.dataset.size !== size) heading.dataset.size = size;
+  }
+
   function show(lead, until) {
     if (!document.body) return;
     if (!card?.isConnected) build();
+    setSize(lead);
     setText(leadLine, lead);
     setText(timeLabel, until);
     position();

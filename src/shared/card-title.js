@@ -3,7 +3,7 @@
   "use strict";
 
   const DEFAULT_TITLE = "No feed";
-  const MAX_LENGTH = 24;
+  const MAX_LENGTH = 40;
 
   // What was typed, tidied: one line, trimmed, at most MAX_LENGTH characters. Anything empty
   // or unusable becomes the default.
