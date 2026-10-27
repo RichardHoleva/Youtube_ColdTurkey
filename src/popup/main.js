@@ -4,7 +4,7 @@ import { byId, setText } from "./dom.js";
 import { setHeadline } from "./headline.js";
 import { NO_MESSAGE, paintMessage, setMessageHint, showMessage } from "./message.js";
 import { draftDiffersFrom, draftSchedule, listen, readDraft, renderForm, showSchedule, takeDraft } from "./schedule-form.js";
-import "./settings/disclosure.js";
+import "./settings/drawer.js";
 import { listenToOptions, setOptionsLocked, showOptions } from "./settings/options.js";
 import { isLocked, lockedNotice, state } from "./state.js";
 import "./theme/theme-switch.js";
@@ -75,9 +75,10 @@ function render() {
   paintMessage();
 }
 
-setMessageHint(() => {
+setMessageHint((line) => {
   const now = new Date();
   if (isLocked(now)) return { text: lockedNotice(now), kind: "notice" };
+  if (line === "drawer") return NO_MESSAGE;
   const { start, end } = readDraft();
   if (start !== null && end !== null && start > end) return { text: "Runs through midnight.", kind: "" };
   if (state.loaded && !state.schedule) return { text: "Nothing is blocked until you save.", kind: "" };

@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="styles/timeline.css">
     <link rel="stylesheet" href="styles/schedule-form.css">
     <link rel="stylesheet" href="styles/confirm-dialog.css">
-    <link rel="stylesheet" href="settings/disclosure.css">
+    <link rel="stylesheet" href="settings/drawer.css">
     <link rel="stylesheet" href="settings/options.css">
     <link rel="stylesheet" href="theme/theme-switch.css">
     <script src="../shared/theme.js"></script>
@@ -19,7 +19,7 @@
     <script src="../shared/options.js"></script>
     <script type="module" src="main.js"></script>
   </head>
-  <body data-state="loading">
+  <body data-state="loading" data-drawer="closed">
     <svg width="0" height="0" style="position: absolute" aria-hidden="true">
       <symbol id="icon-lock" viewBox="0 0 16 16" fill="none">
         <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
@@ -29,7 +29,12 @@
 
     <main>
       <header class="topbar">
-        <span class="brand">Focus Lock</span>
+        <div class="topbar-start">
+          <button type="button" class="drawer-button" id="drawer-open" aria-expanded="false" aria-controls="block-drawer" aria-label="Choose what to block" title="Choose what to block">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 4h14M1 8h8.5M1 12h11"/></svg>
+          </button>
+          <span class="brand">Focus Lock</span>
+        </div>
         <div class="topbar-end">
           <time class="clock" id="clock"><span class="clock-dot" aria-hidden="true"></span><span id="clock-time">--:--</span></time>
           <button type="button" class="theme-switch" role="switch" aria-checked="false" aria-label="Dark mode" title="Switch to dark mode">
@@ -80,37 +85,45 @@
         </div>
       </form>
       <p class="message" id="form-message" role="status" aria-live="polite"></p>
-
-      <section class="settings" aria-label="Settings">
-        <button type="button" class="disclosure" aria-expanded="false" aria-controls="settings-panel">
-          <span class="disclosure-label">Settings</span>
-          <span class="options-lock" aria-hidden="true"><svg class="icon" width="14" height="14"><use href="#icon-lock"/></svg>Locked</span>
-          <span class="disclosure-mark" aria-hidden="true"></span>
-        </button>
-        <div class="panel" id="settings-panel" inert>
-          <div class="panel-inner">
-            <div class="options" role="group" aria-label="Also block">
-              <label class="option">
-                <input class="option-input" type="checkbox" role="switch" data-option="shorts">
-                <span class="option-name">Shorts</span>
-                <span class="option-state" aria-hidden="true"></span>
-                <span class="toggle" aria-hidden="true">
-                  <span class="toggle-track"></span><span class="toggle-bar"></span><span class="toggle-ticks"></span><span class="toggle-cursor"></span>
-                </span>
-              </label>
-              <label class="option">
-                <input class="option-input" type="checkbox" role="switch" data-option="subscriptions">
-                <span class="option-name">Subscriptions</span>
-                <span class="option-state" aria-hidden="true"></span>
-                <span class="toggle" aria-hidden="true">
-                  <span class="toggle-track"></span><span class="toggle-bar"></span><span class="toggle-ticks"></span><span class="toggle-cursor"></span>
-                </span>
-              </label>
-            </div>
-          </div>
-        </div>
-      </section>
     </main>
+
+    <aside class="drawer" id="block-drawer" aria-labelledby="drawer-title" inert>
+      <header class="topbar">
+        <div class="topbar-start">
+          <button type="button" class="drawer-button" id="drawer-close" aria-label="Close" title="Close">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 8H2M6.5 3.5 2 8l4.5 4.5"/></svg>
+          </button>
+          <span class="brand">Focus Lock</span>
+        </div>
+        <span class="options-lock" aria-hidden="true"><svg class="icon" width="14" height="14"><use href="#icon-lock"/></svg>Locked</span>
+      </header>
+
+      <h2 class="headline drawer-headline" id="drawer-title">
+        <span class="headline-line">Also</span>
+        <span class="headline-line">block.</span>
+      </h2>
+      <p class="drawer-lead">Hidden on YouTube only while focus is on.</p>
+
+      <div class="options" role="group" aria-label="Also block">
+        <label class="option">
+          <input class="option-input" type="checkbox" role="switch" data-option="shorts">
+          <span class="option-name">Shorts</span>
+          <span class="option-state" aria-hidden="true"></span>
+          <span class="toggle" aria-hidden="true">
+            <span class="toggle-track"></span><span class="toggle-bar"></span><span class="toggle-ticks"></span><span class="toggle-cursor"></span>
+          </span>
+        </label>
+        <label class="option">
+          <input class="option-input" type="checkbox" role="switch" data-option="subscriptions">
+          <span class="option-name">Subscriptions</span>
+          <span class="option-state" aria-hidden="true"></span>
+          <span class="toggle" aria-hidden="true">
+            <span class="toggle-track"></span><span class="toggle-bar"></span><span class="toggle-ticks"></span><span class="toggle-cursor"></span>
+          </span>
+        </label>
+      </div>
+      <p class="message" id="drawer-message" role="status" aria-live="polite"></p>
+    </aside>
 
     <dialog class="confirm" id="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-body confirm-lock-text">
       <h2 id="confirm-title"></h2>

@@ -6,7 +6,8 @@ main { padding: 24px 24px 14px; }
 h1, p { margin: 0; }
 
 .topbar { display: flex; justify-content: space-between; align-items: center; }
-.topbar-end { display: flex; align-items: center; gap: 14px; }
+.topbar-start, .topbar-end { display: flex; align-items: center; gap: 14px; }
+.topbar-start { gap: 10px; }
 .brand { font-size: 14px; font-weight: 700; letter-spacing: -.01em; }
 .clock { display: flex; align-items: center; gap: 8px; font: 400 14px/1 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
 .clock-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }

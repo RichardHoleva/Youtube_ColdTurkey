@@ -1,8 +1,9 @@
-/* The Settings section and its switches. Each switch is a miniature of the timeline: off is an
-   empty track with the cursor at the start; on, the black bar sweeps across with the cursor
-   leading. Popup height is capped at 600px by Chrome, so keep this compact. */
+/* The list of switches inside the drawer. Each switch is a miniature of the timeline: off is
+   an empty track with the cursor at the start; on, the black bar sweeps across with the
+   cursor leading. */
 
-.settings { margin-top: 10px; border-top: 1px solid var(--rule); }
+.options { border-top: 1px solid var(--rule); }
+.option:last-child { border-bottom: 1px solid var(--rule); }
 
 .options-lock { display: none; align-items: center; gap: 6px; font: 400 13px/1 var(--sans); color: var(--muted); }
 body[data-state="locked"] .options-lock { display: flex; }
