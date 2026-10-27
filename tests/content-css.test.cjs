@@ -12,6 +12,7 @@ const hiding = [...css.matchAll(/([^{}]+)\{\s*display:\s*none\s*!important;\s*\}
   .filter((selector) => selector && !selector.includes('yfl-focus-notice'));
 const routeFree = hiding.filter((selector) => !selector.includes('data-yfl-page'));
 const subscriptions = hiding.filter((selector) => /subscriptions/.test(selector));
+const shorts = hiding.filter((selector) => /shorts|reel/i.test(selector));
 
 test('home feed and watch sidebar are hidden regardless of the route flag', () => {
   // YouTube keeps the old page painted for a moment after the URL changes, and the
@@ -31,8 +32,9 @@ test('route-independent rules can only ever match the home feed, the watch sideb
   // A bare "ytd-browse ytd-rich-grid-renderer" would also hide channel Videos tabs, so it
   // must stay behind the home-route flag.
   const allowed = /ytd-browse\[page-subtype="(home|subscriptions)"\]|ytd-watch-flexy|ytd-watch-grid|ytd-watch-next-secondary-results-renderer|ytd-(mini-)?guide-entry-renderer:has\(a\[href="\/feed\/subscriptions"\]\)/;
-  assert.ok(routeFree.length > 0);
-  for (const selector of routeFree) {
+  const others = routeFree.filter((selector) => !shorts.includes(selector));
+  assert.ok(others.length > 0);
+  for (const selector of others) {
     assert.ok(selector.startsWith('html[data-yfl-active="true"]'), `must require an active interval: ${selector}`);
     assert.match(selector, allowed, `too broad for a route-independent rule: ${selector}`);
   }
@@ -58,6 +60,25 @@ test('subscriptions are only hidden when their switch is on', () => {
 test('no other rule can reach the subscriptions page or its sidebar links', () => {
   const others = hiding.filter((selector) => !subscriptions.includes(selector));
   for (const selector of others) assert.ok(!/subscriptions/.test(selector), selector);
+});
+
+test('Shorts are only hidden when their switch is on', () => {
+  assert.ok(shorts.length > 0);
+  for (const selector of shorts) {
+    assert.ok(selector.startsWith('html[data-yfl-active="true"][data-yfl-block-shorts="true"]'), `needs the lock and the Shorts switch: ${selector}`);
+  }
+});
+
+test('every Shorts rule names something that is a Short, so it can never hide ordinary videos', () => {
+  // A bare "ytd-rich-item-renderer" or "ytd-video-renderer" would hide every video on the page;
+  // each one must be narrowed to the ones that link to /shorts/.
+  const aShort = /ytd-shorts$|ytd-reel-shelf-renderer$|ytd-rich-shelf-renderer\[is-shorts\]$|ytm-shorts-lockup-view-model(-v2)?(\)?)$|yt-tab-shape\[tab-title="Shorts"\]$|:has\(a\[href\^="\/shorts\/?"\]\)$/;
+  for (const selector of shorts) assert.match(selector, aShort, `not clearly a Short: ${selector}`);
+});
+
+test('no other rule can reach Shorts', () => {
+  const others = hiding.filter((selector) => !shorts.includes(selector));
+  for (const selector of others) assert.ok(!/shorts|reel/i.test(selector), selector);
 });
 
 test('the notice card takes every color from variables, with a dark set', () => {

@@ -37,6 +37,25 @@ html[data-yfl-active="true"][data-yfl-block-subscriptions="true"][data-yfl-page=
   display: none !important;
 }
 
+/* Shorts: the player page, the shelves and tiles in feeds and search results, the Shorts tab on
+   channels and the sidebar links. Only while the lock is active AND the user switched Shorts on. */
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-shorts,
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-reel-shelf-renderer,
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-rich-shelf-renderer[is-shorts],
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-rich-section-renderer:has(ytm-shorts-lockup-view-model),
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] grid-shelf-view-model:has(ytm-shorts-lockup-view-model),
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytm-shorts-lockup-view-model,
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytm-shorts-lockup-view-model-v2,
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-video-renderer:has(a[href^="/shorts/"]),
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-rich-item-renderer:has(a[href^="/shorts/"]),
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-grid-video-renderer:has(a[href^="/shorts/"]),
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-compact-video-renderer:has(a[href^="/shorts/"]),
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] yt-tab-shape[tab-title="Shorts"],
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-guide-entry-renderer:has(a[href^="/shorts"]),
+html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-mini-guide-entry-renderer:has(a[href^="/shorts"]) {
+  display: none !important;
+}
+
 /* The notice card follows the light or dark mode picked in the popup, not YouTube's own theme.
    content.js shows it by setting data-yfl-notice on <html>, and the mode with data-yfl-theme. */
 #yfl-focus-notice {

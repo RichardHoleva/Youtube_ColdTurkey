@@ -9,6 +9,7 @@ Think of it as a cold-turkey blocker for the recommendation algorithm, not for Y
 - **Hides the home feed** and the recommendations next to the video, but only inside your focus window.
 - **Leaves the useful parts alone:** search, the player, comments, playlist controls and channel pages.
 - **Can also block Subscriptions.** Switch it on in the block panel and, during the focus window, the subscriptions feed and the sidebar links to it disappear. Left off, subscriptions stay available.
+- **Can also block Shorts.** With the Shorts switch on, during the focus window the Shorts player, the Shorts shelves and tiles in search results and feeds, the Shorts tab on channels and the sidebar link all disappear. A Short opened from a link shows a "No Shorts until HH:mm" card and is stopped, so it can't keep playing sound behind it. Left off, Shorts work as usual.
 - **Does nothing until you set it up.** A fresh install blocks nothing. You choose your hours first, and the lock starts only after you save and confirm.
 - **Locks its own settings** while the window is active, so you can't just change them when the urge hits. The hours turn read-only ("Locked until HH:mm") and a block you switched on can't be switched off. You can still block more during the lock, but only in that direction. Everything unlocks when the window ends.
 - **Repeats every day** in your computer's local time. Overnight windows such as 22:00-06:00 work too.
@@ -32,7 +33,7 @@ You can also set the hours on the 24-hour bar itself. Drag the grip at either en
 
 A confirmation popup explains what will happen, including that you won't be able to change any settings until the window ends. Click **Continue** to save, or **Go back** to change the hours. Nothing is saved and nothing is locked until you continue. If the window includes the current time, the lock starts immediately. Otherwise it starts at the **From** time.
 
-The gear button at the top left of the popup slides out the **Also block** panel, where you choose what else to hide. Close it with the arrow in the same spot or with Esc, and it slides back. Flipping a switch only changes a draft: press **Save** at the bottom of the panel to store it, and the panel closes. Leaving with the arrow or Esc throws the draft away. During the lock you can turn more switches on and save them, and each saved one gets a padlock because it stays on until the window ends; the ones already on can't be turned off. The **Subscriptions** switch works. The **Shorts** switch is visual only for now.
+The gear button at the top left of the popup slides out the **Also block** panel, where you choose what else to hide. Close it with the arrow in the same spot or with Esc, and it slides back. Flipping a switch only changes a draft: press **Save** at the bottom of the panel to store it, and the panel closes. Leaving with the arrow or Esc throws the draft away. During the lock you can turn more switches on and save them, and each saved one gets a padlock because it stays on until the window ends; the ones already on can't be turned off. Both the **Shorts** and **Subscriptions** switches work.
 
 The sun/moon switch in the top bar changes between light and dark mode. It remembers your choice, starts out following your system setting, and keeps working during a lock. The "No feed until HH:mm" card on YouTube follows the same choice, including live while a YouTube tab is open.
 
@@ -46,7 +47,7 @@ This is a focus aid, not a security tool. Read this before relying on it:
 
 - **It is easy to bypass.** You can still disable or uninstall the extension, edit its files or change your system clock. The lock only stops casual changes to the schedule.
 - **Desktop YouTube only** (`youtube.com` and `www.youtube.com`). The mobile site, the YouTube app, YouTube Music and embedded players on other sites are not covered.
-- **Not a full blocker:** it isn't a Shorts blocker yet, and channel pages stay available. The Subscriptions block covers the subscriptions feed and the sidebar links to it, not the list of subscribed channels in the sidebar.
+- **Not a full blocker:** channel pages stay available. The Subscriptions block covers the subscriptions feed and the sidebar links to it, not the list of subscribed channels in the sidebar. The Shorts block hides Shorts, but YouTube's own "Shorts" filter button in the search bar stays visible; it just leads to results with no Shorts in them.
 - **YouTube can break it.** If YouTube changes its page structure, the hiding rules may need updating.
 - Tested in Chromium on Windows. Opera GX should work since it's Chromium-based, but this hasn't been verified.
 

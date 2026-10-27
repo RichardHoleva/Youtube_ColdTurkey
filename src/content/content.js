@@ -8,6 +8,7 @@
   let options = FocusOptions.normalize();
   let savedTheme = null; // the choice made in the popup; null until the user makes one
   let cardTitle = FocusTitle.DEFAULT_TITLE; // what the home card says; the user can rename it
+  let shortsBlocked = false; // the lock is on and so is the Shorts switch
   let boundaryTimer;
   let refreshQueued = false;
   let nextChangeLabel = "";
@@ -17,6 +18,7 @@
     if (path === "/" || path === "/feed/what_to_watch") return "home";
     if (path === "/watch") return "watch";
     if (path === "/feed/subscriptions") return "subscriptions";
+    if (path === "/shorts" || path.startsWith("/shorts/")) return "shorts";
     return "other";
   }
 
@@ -28,8 +30,17 @@
   function noticeLead(page) {
     if (page === "home") return cardTitle;
     if (page === "subscriptions" && options.subscriptions) return "No subscriptions";
+    if (page === "shorts" && options.shorts) return "No Shorts";
     return null;
   }
+
+  // A hidden Short keeps playing, sound included, so stop it now and whenever it starts again.
+  function silenceShorts() {
+    for (const video of document.querySelectorAll("ytd-shorts video")) video.pause();
+  }
+  document.addEventListener("play", (event) => {
+    if (shortsBlocked && event.target.closest?.("ytd-shorts")) event.target.pause();
+  }, true);
 
   // The local clock decides, including after sleep or a clock change.
   function scheduleBoundary(now) {
@@ -54,6 +65,8 @@
     setRootAttribute("data-yfl-page", page);
     setRootAttribute("data-yfl-theme", FocusTheme.resolve(savedTheme, matchMedia("(prefers-color-scheme: dark)").matches));
     for (const key of FocusOptions.KEYS) setRootAttribute(`data-yfl-block-${key}`, active && options[key]);
+    shortsBlocked = active && options.shorts;
+    if (shortsBlocked && page === "shorts") silenceShorts();
 
     if (reschedule || boundaryTimer === undefined) scheduleBoundary(now);
 
