@@ -1,11 +1,9 @@
 "use strict";
-importScripts("schedule.js");
+importScripts("../shared/schedule.js", "../shared/options.js", "state.js", "alarms.js", "publish.js");
 
-const HEARTBEAT = "focus-clock-check";
-const BOUNDARY = "focus-next-transition";
-const YOUTUBE_URLS = ["https://www.youtube.com/*", "https://youtube.com/*"];
+const MESSAGE_TYPES = ["GET_STATE", "SAVE_SCHEDULE", "SAVE_OPTIONS"];
 
-// Serialize reads/saves: a second popup cannot overwrite a newly active lock.
+// Jobs run one at a time, so a second popup can't overwrite a lock that just started.
 let pending = Promise.resolve();
 function enqueue(job) {
   const result = pending.then(job);
@@ -13,105 +11,63 @@ function enqueue(job) {
   return result;
 }
 
-// null until the user has saved a schedule. A fresh install is not locked.
-async function readSchedule() {
-  const stored = await chrome.storage.local.get("schedule");
-  return FocusSchedule.saved(stored.schedule);
-}
-
-function makeState(schedule) {
-  const now = new Date();
-  const next = FocusSchedule.nextTransition(schedule, now);
-  return {
-    schedule,
-    active: FocusSchedule.isActive(schedule, now),
-    now: now.getTime(),
-    nextChange: next ? next.getTime() : null
-  };
-}
-
-async function ensureAlarms(state) {
-  const heartbeat = await chrome.alarms.get(HEARTBEAT);
-  if (!heartbeat || heartbeat.periodInMinutes !== 1) {
-    await chrome.alarms.create(HEARTBEAT, { periodInMinutes: 1 });
-  }
-  if (state.nextChange === null) {
-    await chrome.alarms.clear(BOUNDARY);
-    return;
-  }
-  const boundary = await chrome.alarms.get(BOUNDARY);
-  if (!boundary || Math.abs(boundary.scheduledTime - state.nextChange) > 1000) {
-    await chrome.alarms.create(BOUNDARY, { when: state.nextChange });
-  }
-}
-
-function titleFor(state) {
-  if (!state.schedule) return "Focus Lock: set your focus hours";
-  const until = FocusSchedule.timeLabel(new Date(state.nextChange));
-  return state.active ? `Focus Lock: no feed until ${until}` : `Focus Lock: feed is open until ${until}`;
-}
-
-async function publish(state) {
-  await Promise.allSettled([
-    // "SET" nudges a new user to open the popup and choose their hours.
-    chrome.action.setBadgeText({ text: !state.schedule ? "SET" : state.active ? "ON" : "" }),
-    chrome.action.setBadgeBackgroundColor({ color: "#e5481a" }),
-    chrome.action.setTitle({ title: titleFor(state) }),
-    (async () => {
-      const tabs = await chrome.tabs.query({ url: YOUTUBE_URLS });
-      await Promise.allSettled(tabs.filter(tab => tab.id !== undefined).map(tab =>
-        chrome.tabs.sendMessage(tab.id, { type: "FOCUS_STATE", state })));
-    })()
-  ]);
-}
-
 async function synchronize(broadcast = true) {
-  const state = makeState(await readSchedule());
+  const state = makeState(await readStored());
   await ensureAlarms(state);
   if (broadcast) await publish(state);
   return state;
 }
 
-async function handleMessage(message) {
-  if (message.type === "GET_STATE") {
-    return { ok: true, state: await synchronize(false) };
-  }
+function refusal(code, message, state) {
+  return { ok: false, code, message, state };
+}
 
-  const schedule = await readSchedule();
-  // Enforce the lock here as well as in the UI, using the time at save time.
-  const state = makeState(schedule);
-  if (state.active) {
-    return { ok: false, code: "LOCKED", message: `Schedule is locked until ${FocusSchedule.timeLabel(new Date(state.nextChange))}.`, state };
-  }
-  if (!FocusSchedule.validate(message.schedule)) {
-    return { ok: false, code: "INVALID", message: "Enter two different times as HH:mm.", state };
-  }
-  await chrome.storage.local.set({ schedule: FocusSchedule.normalize(message.schedule) });
+async function saveSchedule(schedule, state) {
+  if (!FocusSchedule.validate(schedule)) return refusal("INVALID", "Enter two different times as HH:mm.", state);
+  await chrome.storage.local.set({ schedule: FocusSchedule.normalize(schedule) });
   return { ok: true, state: await synchronize() };
 }
 
-// Register listeners synchronously before any asynchronous startup work.
+async function saveOptions(options, state) {
+  if (!FocusOptions.validate(options)) return refusal("INVALID", "Couldn’t read those settings.", state);
+  await chrome.storage.local.set({ options: FocusOptions.normalize(options) });
+  return { ok: true, state: await synchronize() };
+}
+
+async function handleMessage(message) {
+  if (message.type === "GET_STATE") return { ok: true, state: await synchronize(false) };
+
+  // The popup also refuses while locked, but its clock can be stale; this check is the real lock.
+  const state = makeState(await readStored());
+  if (state.active) {
+    const until = FocusSchedule.timeLabel(new Date(state.nextChange));
+    return refusal("LOCKED", `Settings are locked until ${until}.`, state);
+  }
+  return message.type === "SAVE_SCHEDULE" ? saveSchedule(message.schedule, state) : saveOptions(message.options, state);
+}
+
+function refresh() {
+  enqueue(() => synchronize()).catch((error) => console.error("YouTube Focus Lock:", error));
+}
+
+// Listeners are registered synchronously, before any asynchronous startup work.
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (!message || !["GET_STATE", "SAVE_SCHEDULE"].includes(message.type)) return false;
-  enqueue(() => handleMessage(message)).then(sendResponse, error => {
+  if (!message || !MESSAGE_TYPES.includes(message.type)) return false;
+  enqueue(() => handleMessage(message)).then(sendResponse, (error) => {
     console.error("YouTube Focus Lock:", error);
-    sendResponse({ ok: false, code: "ERROR", message: "Couldn’t load or save the schedule. Reopen Focus Lock and try again." });
+    sendResponse(refusal("ERROR", "Couldn’t load or save settings. Reopen Focus Lock and try again."));
   });
   return true;
 });
 
-function refresh() {
-  enqueue(() => synchronize()).catch(error => console.error("YouTube Focus Lock:", error));
-}
-
 chrome.runtime.onInstalled.addListener(refresh);
 chrome.runtime.onStartup.addListener(refresh);
-chrome.alarms.onAlarm.addListener(alarm => {
+chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === HEARTBEAT || alarm.name === BOUNDARY) refresh();
 });
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && changes.schedule) refresh();
+  if (area === "local" && (changes.schedule || changes.options)) refresh();
 });
 
-// Also recreate alarms whenever a suspended service worker starts again.
+// A suspended worker that wakes up again recreates its alarms here.
 refresh();

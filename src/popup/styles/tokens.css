@@ -1,0 +1,42 @@
+:root {
+  color-scheme: light;
+  --bg: #e8e6e1;
+  --field: #f4f3ef;
+  --ink: #151515;
+  --on-ink: #fff;
+  --ink-hover: #343432;
+  --muted: #66635e;
+  --rule: #d3d1ca;
+  --track: #cdcbc5;
+  --tick: #a29f98;
+  --tick-major: #5a5751;
+  --outline: #777775;
+  --accent: #e5481a;
+  --accent-ink: #b3330d;
+  --disabled: #9c9992;
+  --disabled-ink: var(--bg);
+  --backdrop: rgb(21 21 21 / .5);
+  --sweep: 260ms cubic-bezier(.3, .7, .2, 1);
+  --sans: "Inter", "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+  --mono: "SF Mono", "Cascadia Mono", Consolas, Menlo, "Liberation Mono", "DejaVu Sans Mono", monospace;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #161513;
+  --field: #1f1e1b;
+  --ink: #ece9e2;
+  --on-ink: #161513;
+  --ink-hover: #d4d0c8;
+  --muted: #9a968d;
+  --rule: #34322e;
+  --track: #3b3935;
+  --tick: #6b6862;
+  --tick-major: #a29f98;
+  --outline: #6d6a64;
+  --accent: #ff6a3d;
+  --accent-ink: #ff8a63;
+  --disabled: #4a4843;
+  --disabled-ink: #8d8981;
+  --backdrop: rgb(0 0 0 / .6);
+}

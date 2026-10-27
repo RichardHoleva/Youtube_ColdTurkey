@@ -2,17 +2,12 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const vm = require('node:vm');
+const { read } = require('./helpers.cjs');
 
 process.env.TZ = 'Europe/Bratislava';
-const parent = path.resolve(__dirname, '..');
-const extension = fs.existsSync(path.join(parent, 'manifest.json'))
-  ? parent
-  : path.join(parent, 'youtube-focus-lock');
 const context = vm.createContext({ Date, console });
-vm.runInContext(fs.readFileSync(path.join(extension, 'schedule.js'), 'utf8'), context);
+vm.runInContext(read('shared', 'schedule.js'), context);
 const schedule = context.FocusSchedule;
 const day = { start: '08:00', end: '20:00' };
 const night = { start: '22:00', end: '06:00' };

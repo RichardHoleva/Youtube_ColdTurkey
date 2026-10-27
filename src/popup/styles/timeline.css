@@ -1,0 +1,11 @@
+.timeline { margin-top: 40px; }
+.timeline-scale { position: relative; height: 32px; }
+.timeline-base { position: absolute; left: 0; right: 0; top: 10px; height: 2px; background: var(--track); }
+.timeline-bar { position: absolute; top: 5px; height: 12px; background: var(--ink); }
+.timeline-ticks { position: absolute; left: 0; right: 0; top: 21px; height: 10px; }
+.timeline-tick { position: absolute; top: 0; width: 1px; height: 5px; background: var(--tick); transform: translateX(-50%); }
+.timeline-tick.major { height: 10px; background: var(--tick-major); }
+.timeline-now { position: absolute; top: 0; width: 2px; height: 32px; margin-left: -1px; background: var(--accent); }
+.timeline-labels { position: relative; height: 16px; margin-top: 8px; font: 400 12px/16px var(--mono); color: var(--muted); }
+.timeline-labels span { position: absolute; left: calc(var(--at) * 100%); transform: translateX(calc(var(--at) * -100%)); }
+.timeline-labels span:nth-child(2), .timeline-labels span:nth-child(3), .timeline-labels span:nth-child(4) { transform: translateX(-50%); }

@@ -1,0 +1,12 @@
+.schedule { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 100px; column-gap: 12px; align-items: end; margin-top: 30px; padding-top: 24px; border-top: 1px solid var(--rule); }
+.field { display: flex; flex-direction: column; min-width: 0; }
+label { margin-bottom: 8px; font-size: 13px; color: var(--muted); }
+input { width: 100%; min-width: 0; height: 46px; padding: 0 12px; border: 1px solid var(--outline); border-radius: 4px; background: var(--field); color: var(--ink); font: 500 22px/1 var(--mono); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+input::placeholder { color: var(--tick); }
+input:focus-visible { outline: 0; border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
+input:disabled { color: var(--muted); border-color: var(--track); cursor: default; }
+input[aria-invalid="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.time-value { display: flex; align-items: center; height: 46px; font: 700 26px/1 var(--mono); letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+
+.action { display: flex; align-items: center; justify-content: flex-end; min-width: 0; }
+.lock-status { display: flex; align-items: center; gap: 6px; height: 46px; color: var(--muted); font-size: 13px; }

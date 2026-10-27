@@ -5,12 +5,9 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { src, read } = require('./helpers.cjs');
 
 process.env.TZ = 'Europe/Bratislava';
-const parent = path.resolve(__dirname, '..');
-const extension = fs.existsSync(path.join(parent, 'manifest.json'))
-  ? parent
-  : path.join(parent, 'youtube-focus-lock');
 const day = { start: '08:00', end: '20:00' };
 const night = { start: '22:00', end: '06:00' };
 const clone = (value) => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
@@ -44,9 +41,9 @@ async function worker({ initial = {}, time = '2026-10-24T14:00:00', brokenTabs =
     storage: {
       onChanged,
       local: {
-        async get(key) {
+        async get(keys) {
           if (failStorage) throw new Error('Storage unavailable');
-          return { [key]: clone(storage[key]) };
+          return Object.fromEntries([].concat(keys).map(key => [key, clone(storage[key])]));
         },
         async set(update) {
           if (failStorage) throw new Error('Storage unavailable');
@@ -89,9 +86,14 @@ async function worker({ initial = {}, time = '2026-10-24T14:00:00', brokenTabs =
     chrome,
     Date: Clock,
     console: { error(...args) { errors.push(args); } },
-    importScripts(file) { vm.runInContext(fs.readFileSync(path.join(extension, file), 'utf8'), context, { filename: file }); }
+    importScripts(...files) {
+      for (const file of files) {
+        const code = fs.readFileSync(path.resolve(src('background'), file), 'utf8');
+        vm.runInContext(code, context, { filename: file });
+      }
+    }
   });
-  vm.runInContext(fs.readFileSync(path.join(extension, 'background.js'), 'utf8'), context, { filename: 'background.js' });
+  vm.runInContext(read('background', 'background.js'), context, { filename: 'background.js' });
   async function flush() {
     for (let count = 0; count < 8; count += 1) {
       const promise = vm.runInContext('pending', context);
@@ -145,7 +147,7 @@ test('first save starts the lock right away when the window includes now', async
   assert.equal(app.alarms.get('focus-next-transition').scheduledTime, new Date('2026-10-24T20:00:00').getTime());
   const locked = await app.message({ type: 'SAVE_SCHEDULE', schedule: night });
   assert.equal(locked.code, 'LOCKED');
-  assert.equal(locked.message, 'Schedule is locked until 20:00.');
+  assert.equal(locked.message, 'Settings are locked until 20:00.');
   assert.deepEqual(app.storage.schedule, day);
 });
 
@@ -248,7 +250,7 @@ test('toolbar title and rejection messages are English and use the real next tra
   const app = await worker({ initial: { schedule: day } });
   assert.equal(app.titles.at(-1), 'Focus Lock: no feed until 20:00');
   const locked = await app.message({ type: 'SAVE_SCHEDULE', schedule: night });
-  assert.equal(locked.message, 'Schedule is locked until 20:00.');
+  assert.equal(locked.message, 'Settings are locked until 20:00.');
   app.setTime('2026-10-24T21:30:00');
   app.chrome.alarms.onAlarm.emit({ name: 'focus-clock-check' });
   await app.flush();
@@ -260,7 +262,7 @@ test('toolbar title and rejection messages are English and use the real next tra
 test('night schedule title and lock message name the end after midnight', async () => {
   const app = await worker({ initial: { schedule: night }, time: '2026-10-24T23:00:00' });
   assert.equal(app.titles.at(-1), 'Focus Lock: no feed until 06:00');
-  assert.equal((await app.message({ type: 'SAVE_SCHEDULE', schedule: day })).message, 'Schedule is locked until 06:00.');
+  assert.equal((await app.message({ type: 'SAVE_SCHEDULE', schedule: day })).message, 'Settings are locked until 06:00.');
 });
 
 test('unreachable YouTube tabs do not break state updates', async () => {
@@ -277,4 +279,59 @@ test('storage errors return a visible failure instead of falsely reporting a sav
   assert.equal(response.ok, false);
   assert.equal(response.code, 'ERROR');
   assert.deepEqual(app.storage.schedule, night);
+});
+
+test('switches start off and travel with the state', async () => {
+  const app = await worker();
+  assert.deepEqual((await app.message({ type: 'GET_STATE' })).state.options, { shorts: false, subscriptions: false });
+  assert.deepEqual(app.broadcasts.at(-1).message.state.options, { shorts: false, subscriptions: false });
+});
+
+test('switches can be saved while unlocked and leave the schedule alone', async () => {
+  const app = await worker({ initial: { schedule: night } });
+  const response = await app.message({ type: 'SAVE_OPTIONS', options: { shorts: false, subscriptions: true } });
+  assert.equal(response.ok, true);
+  assert.deepEqual(response.state.options, { shorts: false, subscriptions: true });
+  assert.deepEqual(app.storage.options, { shorts: false, subscriptions: true });
+  assert.deepEqual(app.storage.schedule, night);
+  await app.flush();
+  assert.equal(app.broadcasts.at(-1).message.state.options.subscriptions, true);
+});
+
+test('switches cannot be changed during the lock', async () => {
+  const locked = { shorts: false, subscriptions: true };
+  const app = await worker({ initial: { schedule: day, options: locked } });
+  const response = await app.message({ type: 'SAVE_OPTIONS', options: { shorts: false, subscriptions: false } });
+  assert.equal(response.ok, false);
+  assert.equal(response.code, 'LOCKED');
+  assert.equal(response.message, 'Settings are locked until 20:00.');
+  assert.deepEqual(app.storage.options, locked);
+  assert.equal(app.writes.length, 0);
+});
+
+test('a popup with a stale clock cannot switch something off once the lock has begun', async () => {
+  const app = await worker({ initial: { schedule: day, options: { shorts: false, subscriptions: true } }, time: '2026-10-24T07:59:59' });
+  assert.equal((await app.message({ type: 'GET_STATE' })).state.active, false);
+  app.setTime('2026-10-24T08:00:00');
+  const response = await app.message({ type: 'SAVE_OPTIONS', options: { shorts: false, subscriptions: false } });
+  assert.equal(response.code, 'LOCKED');
+  assert.equal(app.storage.options.subscriptions, true);
+});
+
+test('malformed switch requests are rejected without touching storage', async () => {
+  const app = await worker({ initial: { schedule: night } });
+  for (const options of [null, {}, { shorts: true }, { shorts: 'yes', subscriptions: false }, [true, false]]) {
+    assert.equal((await app.message({ type: 'SAVE_OPTIONS', options })).code, 'INVALID', JSON.stringify(options));
+  }
+  assert.equal(app.storage.options, undefined);
+  assert.equal(app.writes.length, 0);
+});
+
+test('switches survive a restart and reach YouTube tabs while the lock is on', async () => {
+  const first = await worker({ initial: { schedule: night } });
+  await first.message({ type: 'SAVE_OPTIONS', options: { shorts: false, subscriptions: true } });
+  const restarted = await worker({ initial: first.storage, time: '2026-10-24T23:00:00' });
+  const message = restarted.broadcasts.at(-1).message;
+  assert.equal(message.state.active, true);
+  assert.deepEqual(message.state.options, { shorts: false, subscriptions: true });
 });

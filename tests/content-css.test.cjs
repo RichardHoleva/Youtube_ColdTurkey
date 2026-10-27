@@ -2,20 +2,16 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
+const { read } = require('./helpers.cjs');
 
-const parent = path.resolve(__dirname, '..');
-const extension = fs.existsSync(path.join(parent, 'manifest.json'))
-  ? parent
-  : path.join(parent, 'youtube-focus-lock');
-const css = fs.readFileSync(path.join(extension, 'content.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+const css = read('content', 'content.css').replace(/\/\*[\s\S]*?\*\//g, '');
 
 // Every selector of every rule that hides something with `display: none !important`.
 const hiding = [...css.matchAll(/([^{}]+)\{\s*display:\s*none\s*!important;\s*\}/g)]
   .flatMap((match) => match[1].split(',').map((selector) => selector.trim().replace(/\s+/g, ' ')))
   .filter((selector) => selector && !selector.includes('yfl-focus-notice'));
 const routeFree = hiding.filter((selector) => !selector.includes('data-yfl-page'));
+const subscriptions = hiding.filter((selector) => /subscriptions/.test(selector));
 
 test('home feed and watch sidebar are hidden regardless of the route flag', () => {
   // YouTube keeps the old page painted for a moment after the URL changes, and the
@@ -31,13 +27,13 @@ test('home feed and watch sidebar are hidden regardless of the route flag', () =
   }
 });
 
-test('route-independent rules can only ever match the home feed or the watch sidebar', () => {
+test('route-independent rules can only ever match the home feed, the watch sidebar or subscriptions', () => {
   // A bare "ytd-browse ytd-rich-grid-renderer" would also hide channel Videos tabs, so it
   // must stay behind the home-route flag.
-  const allowed = /ytd-browse\[page-subtype="home"\]|ytd-watch-flexy|ytd-watch-grid|ytd-watch-next-secondary-results-renderer/;
+  const allowed = /ytd-browse\[page-subtype="(home|subscriptions)"\]|ytd-watch-flexy|ytd-watch-grid|ytd-watch-next-secondary-results-renderer|ytd-(mini-)?guide-entry-renderer:has\(a\[href="\/feed\/subscriptions"\]\)/;
   assert.ok(routeFree.length > 0);
   for (const selector of routeFree) {
-    assert.ok(selector.startsWith('html[data-yfl-active="true"] '), `must require an active interval: ${selector}`);
+    assert.ok(selector.startsWith('html[data-yfl-active="true"]'), `must require an active interval: ${selector}`);
     assert.match(selector, allowed, `too broad for a route-independent rule: ${selector}`);
   }
 });
@@ -50,4 +46,21 @@ test('generic feed selectors stay limited to the home route', () => {
 
 test('nothing outside an active interval is hidden', () => {
   for (const selector of hiding) assert.ok(selector.includes('[data-yfl-active="true"]'), selector);
+});
+
+test('subscriptions are only hidden when their switch is on', () => {
+  assert.ok(subscriptions.length > 0);
+  for (const selector of subscriptions) {
+    assert.ok(selector.includes('[data-yfl-block-subscriptions="true"]'), `needs the Subscriptions switch: ${selector}`);
+  }
+});
+
+test('no other rule can reach the subscriptions page or its sidebar links', () => {
+  const others = hiding.filter((selector) => !subscriptions.includes(selector));
+  for (const selector of others) assert.ok(!/subscriptions/.test(selector), selector);
+});
+
+test('the notice card is shown only through the notice flag', () => {
+  assert.match(css, /html\[data-yfl-notice="true"\] #yfl-focus-notice\s*\{\s*display:\s*block\s*!important/);
+  assert.match(css, /#yfl-focus-notice\s*\{\s*display:\s*none\s*!important/);
 });

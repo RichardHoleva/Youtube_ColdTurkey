@@ -1,166 +1,121 @@
+/* Runs on YouTube. It only sets attributes on <html>; content.css does the hiding, so
+   recommendations that YouTube inserts later are hidden too. */
 (() => {
   "use strict";
 
-  // CSS reacts to these attributes, so newly inserted recommendations are hidden too.
-  const ACTIVE_ATTRIBUTE = "data-yfl-active";
-  const PAGE_ATTRIBUTE = "data-yfl-page";
-  const NOTICE_ID = "yfl-focus-notice";
   const HEARTBEAT_MS = 10_000;
-  let schedule = null; // stays null, and nothing is hidden, until the user saves hours
+  let schedule = null; // nothing is hidden until the user has saved hours
+  let options = FocusOptions.normalize();
   let boundaryTimer;
-  let pendingRefresh;
-  let notice;
-  let noticeTime;
+  let refreshQueued = false;
   let nextChangeLabel = "";
-  let contentWatcher;
-  let watchedContent;
 
   function pageType() {
     const path = location.pathname.replace(/\/+$/, "") || "/";
     if (path === "/" || path === "/feed/what_to_watch") return "home";
     if (path === "/watch") return "watch";
+    if (path === "/feed/subscriptions") return "subscriptions";
     return "other";
   }
 
-  function setAttributeIfChanged(root, name, value) {
-    if (root.getAttribute(name) !== value) root.setAttribute(name, value);
-  }
-
-  function ensureNotice() {
-    if (!document.body) return;
-    if (notice?.isConnected && noticeTime) return;
-    // Reuse a notice left by an earlier script instance, unless it predates this layout.
-    notice = document.getElementById(NOTICE_ID);
-    noticeTime = notice?.querySelector(".yfl-notice-time") ?? undefined;
-    if (noticeTime) return;
-    notice?.remove();
-
-    notice = document.createElement("section");
-    notice.id = NOTICE_ID;
-    notice.setAttribute("role", "status");
-    notice.setAttribute("aria-label", "Focus Lock");
-
-    const brand = document.createElement("span");
-    brand.className = "yfl-notice-brand";
-    brand.textContent = "Focus Lock";
-    const heading = document.createElement("h2");
-    const lead = document.createElement("span");
-    lead.className = "yfl-notice-line";
-    lead.textContent = "No feed";
-    const tail = document.createElement("span");
-    tail.className = "yfl-notice-line";
-    noticeTime = document.createElement("span");
-    noticeTime.className = "yfl-notice-time";
-    tail.append("until ", noticeTime, ".");
-    heading.append(lead, tail);
-    const hint = document.createElement("p");
-    hint.textContent = "Use search to find the video you need.";
-    notice.append(brand, heading, hint);
-    document.body.appendChild(notice);
-  }
-
-  function updateNotice() {
-    if (noticeTime && noticeTime.textContent !== nextChangeLabel) noticeTime.textContent = nextChangeLabel;
-  }
-
-  // YouTube's sidebar pushes the page area right, so the window center is not the center
-  // of the empty home page. Follow the page area instead, including when the sidebar toggles.
-  function positionNotice() {
-    if (!notice?.isConnected) return;
-    const content = document.querySelector("ytd-page-manager");
-    if (content !== watchedContent) {
-      contentWatcher ??= new ResizeObserver(positionNotice);
-      contentWatcher.disconnect();
-      watchedContent = content;
-      if (content) contentWatcher.observe(content);
-    }
-    const { left, width } = content?.getBoundingClientRect() ?? { width: 0 };
-    if (width > 0) {
-      notice.style.setProperty("--yfl-center", `${left + width / 2}px`);
-      notice.style.setProperty("--yfl-width", `${width}px`);
-    } else {
-      notice.style.removeProperty("--yfl-center");
-      notice.style.removeProperty("--yfl-width");
-    }
-  }
-
-  function refresh(reschedule = false) {
+  function setRootAttribute(name, value) {
     const root = document.documentElement;
-    if (!root) return;
+    if (root.getAttribute(name) !== String(value)) root.setAttribute(name, String(value));
+  }
+
+  function noticeLead(page) {
+    if (page === "home") return "No feed";
+    if (page === "subscriptions" && options.subscriptions) return "No subscriptions";
+    return null;
+  }
+
+  // The local clock decides, including after sleep or a clock change.
+  function scheduleBoundary(now) {
+    clearTimeout(boundaryTimer);
+    boundaryTimer = undefined;
+    const next = FocusSchedule.nextTransition(schedule, now);
+    nextChangeLabel = next ? FocusSchedule.timeLabel(next) : "";
+    if (!next) return;
+    boundaryTimer = setTimeout(() => {
+      boundaryTimer = undefined;
+      render(true);
+    }, Math.max(50, next.getTime() - now.getTime() + 25));
+  }
+
+  function render(reschedule = false) {
+    if (!document.documentElement) return;
     const now = new Date();
     const active = FocusSchedule.isActive(schedule, now);
     const page = pageType();
-    setAttributeIfChanged(root, ACTIVE_ATTRIBUTE, String(active));
-    setAttributeIfChanged(root, PAGE_ATTRIBUTE, page);
 
-    // The local clock is authoritative, including after sleep or a clock change.
-    if (reschedule || boundaryTimer === undefined) {
-      clearTimeout(boundaryTimer);
-      boundaryTimer = undefined;
-      const next = FocusSchedule.nextTransition(schedule, now);
-      nextChangeLabel = next ? FocusSchedule.timeLabel(next) : "";
-      if (next) {
-        boundaryTimer = setTimeout(() => {
-          boundaryTimer = undefined;
-          refresh(true);
-        }, Math.max(50, next.getTime() - now.getTime() + 25));
-      }
-    }
+    setRootAttribute("data-yfl-active", active);
+    setRootAttribute("data-yfl-page", page);
+    for (const key of FocusOptions.KEYS) setRootAttribute(`data-yfl-block-${key}`, active && options[key]);
 
-    if (active && page === "home") {
-      ensureNotice();
-      updateNotice();
-      positionNotice();
-    }
+    if (reschedule || boundaryTimer === undefined) scheduleBoundary(now);
+
+    const lead = active ? noticeLead(page) : null;
+    setRootAttribute("data-yfl-notice", lead !== null);
+    if (lead) FocusNotice.show(lead, nextChangeLabel);
   }
 
-  function queueRefresh() {
-    if (pendingRefresh !== undefined) return;
-    pendingRefresh = setTimeout(() => {
-      pendingRefresh = undefined;
-      refresh();
+  function renderSoon() {
+    if (refreshQueued) return;
+    refreshQueued = true;
+    setTimeout(() => {
+      refreshQueued = false;
+      render();
     }, 0);
   }
 
-  function readSchedule() {
+  function apply(stored) {
+    schedule = FocusSchedule.saved(stored.schedule);
+    options = FocusOptions.normalize(stored.options);
+    render(true);
+  }
+
+  function loadSettings() {
     try {
-      chrome.storage.local.get("schedule", (stored) => {
-        if (chrome.runtime.lastError) return;
-        schedule = FocusSchedule.saved(stored.schedule);
-        refresh(true);
+      chrome.storage.local.get(["schedule", "options"], (stored) => {
+        if (!chrome.runtime.lastError) apply(stored);
       });
     } catch {
-      // A previous script instance can outlive an extension reload until navigation.
+      // After an extension reload the old script can linger until the page navigates.
     }
   }
 
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName !== "local" || !changes.schedule) return;
-    schedule = FocusSchedule.saved(changes.schedule.newValue);
-    refresh(true);
+  function reload() {
+    render(true);
+    loadSettings();
+  }
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "local" || !(changes.schedule || changes.options)) return;
+    apply({
+      schedule: changes.schedule ? changes.schedule.newValue : schedule,
+      options: changes.options ? changes.options.newValue : options
+    });
   });
 
   chrome.runtime.onMessage.addListener((message) => {
-    if (message?.type !== "FOCUS_STATE" || !message.state) return;
-    schedule = FocusSchedule.saved(message.state.schedule);
-    refresh(true);
+    if (message?.type === "FOCUS_STATE" && message.state) apply(message.state);
   });
 
-  // YouTube changes routes without reloading the document. The observer is a fallback
-  // for route variants that do not dispatch the usual navigation events.
-  document.addEventListener("yt-navigate-start", queueRefresh, true);
-  document.addEventListener("yt-navigate-finish", queueRefresh, true);
-  document.addEventListener("yt-page-data-updated", queueRefresh, true);
-  window.addEventListener("popstate", queueRefresh);
-  window.addEventListener("pageshow", () => { refresh(true); readSchedule(); });
-  window.addEventListener("focus", () => { refresh(true); readSchedule(); });
+  // YouTube changes pages without reloading. The observer catches the routes that don't
+  // fire its navigation events.
+  document.addEventListener("yt-navigate-start", renderSoon, true);
+  document.addEventListener("yt-navigate-finish", renderSoon, true);
+  document.addEventListener("yt-page-data-updated", renderSoon, true);
+  window.addEventListener("popstate", renderSoon);
+  window.addEventListener("pageshow", reload);
+  window.addEventListener("focus", reload);
   document.addEventListener("visibilitychange", () => {
-    refresh(true);
-    if (!document.hidden) readSchedule();
+    render(true);
+    if (!document.hidden) loadSettings();
   });
-  new MutationObserver(queueRefresh).observe(document, { childList: true, subtree: true });
-  setInterval(() => refresh(true), HEARTBEAT_MS);
+  new MutationObserver(renderSoon).observe(document, { childList: true, subtree: true });
+  setInterval(() => render(true), HEARTBEAT_MS);
 
-  refresh();
-  readSchedule();
+  render();
+  loadSettings();
 })();

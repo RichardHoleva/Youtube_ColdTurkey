@@ -1,40 +1,36 @@
-/* The "Also block" switches. They are visual only for now; what this file adds is the lock.
+const inputs = Array.from(document.querySelectorAll(".option-input"));
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const SHAKE = [0, -4, 4, -3, 0].map((x) => ({ transform: `translateX(${x}px)` }));
 
-   While focus is active the switches refuse to change and say why. popup.js owns the lock
-   and publishes it as <body data-state="locked">, which this file reads. A refused change is
-   reported with a "settings-locked" event that popup.js turns into the message line, so the
-   two files never call into each other. */
-(() => {
-  "use strict";
+export function readOptions() {
+  return Object.fromEntries(inputs.map((input) => [input.dataset.option, input.checked]));
+}
 
-  const inputs = Array.from(document.querySelectorAll(".option-input"));
-  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
-  const SHAKE = [0, -4, 4, -3, 0].map((x) => ({ transform: `translateX(${x}px)` }));
+export function showOptions(options) {
+  for (const input of inputs) input.checked = options[input.dataset.option] === true;
+}
 
-  const isLocked = () => document.body.dataset.state === "locked";
+export function setOptionsLocked(locked) {
+  for (const input of inputs) input.setAttribute("aria-disabled", String(locked));
+}
 
-  // Screen readers should hear that the switches exist but cannot be changed right now.
-  function syncAria() {
-    for (const input of inputs) input.setAttribute("aria-disabled", String(isLocked()));
-  }
+function shake(input) {
+  if (reduceMotion.matches) return;
+  input.closest(".option").querySelector(".toggle").animate(SHAKE, { duration: 320, easing: "ease-out" });
+}
 
-  function refuse(input) {
-    if (!reduceMotion.matches) {
-      input.closest(".option").querySelector(".toggle").animate(SHAKE, { duration: 320, easing: "ease-out" });
-    }
-    document.dispatchEvent(new CustomEvent("settings-locked"));
-  }
-
+// onChange gets the new options after the user flips a switch; onRefused runs when they try
+// while locked.
+export function listenToOptions({ isLocked, onChange, onRefused }) {
   for (const input of inputs) {
     // Not `disabled`: a disabled control swallows the click, and then nobody learns why.
-    // Cancelling the click also covers Space on the keyboard and puts the switch back.
+    // Cancelling the click also covers Space and puts the switch back where it was.
     input.addEventListener("click", (event) => {
       if (!isLocked()) return;
       event.preventDefault();
-      refuse(input);
+      shake(input);
+      onRefused();
     });
+    input.addEventListener("change", () => onChange(readOptions()));
   }
-
-  new MutationObserver(syncAria).observe(document.body, { attributes: true, attributeFilter: ["data-state"] });
-  syncAria();
-})();
+}

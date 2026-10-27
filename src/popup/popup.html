@@ -3,18 +3,22 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="color-scheme" content="light">
+    <meta name="color-scheme" content="light dark">
     <title>Focus Lock</title>
-    <link rel="stylesheet" href="popup.css">
-    <link rel="stylesheet" href="disclosure.css">
-    <link rel="stylesheet" href="options.css">
-    <script src="schedule.js" defer></script>
-    <script src="popup.js" defer></script>
-    <script src="disclosure.js" defer></script>
-    <script src="options.js" defer></script>
+    <link rel="stylesheet" href="styles/tokens.css">
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/timeline.css">
+    <link rel="stylesheet" href="styles/schedule-form.css">
+    <link rel="stylesheet" href="styles/confirm-dialog.css">
+    <link rel="stylesheet" href="settings/disclosure.css">
+    <link rel="stylesheet" href="settings/options.css">
+    <link rel="stylesheet" href="theme/theme-switch.css">
+    <script src="theme/theme-init.js"></script>
+    <script src="../shared/schedule.js"></script>
+    <script src="../shared/options.js"></script>
+    <script type="module" src="main.js"></script>
   </head>
   <body data-state="loading">
-    <!-- The lock icon, drawn once and reused wherever the popup says "locked". -->
     <svg width="0" height="0" style="position: absolute" aria-hidden="true">
       <symbol id="icon-lock" viewBox="0 0 16 16" fill="none">
         <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
@@ -25,7 +29,19 @@
     <main>
       <header class="topbar">
         <span class="brand">Focus Lock</span>
-        <time class="clock" id="clock"><span class="clock-dot" aria-hidden="true"></span><span id="clock-time">--:--</span></time>
+        <div class="topbar-end">
+          <time class="clock" id="clock"><span class="clock-dot" aria-hidden="true"></span><span id="clock-time">--:--</span></time>
+          <button type="button" class="theme-switch" role="switch" aria-checked="false" aria-label="Dark mode" title="Switch to dark mode">
+            <span class="theme-thumb" aria-hidden="true"></span>
+            <svg class="theme-icon theme-icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true">
+              <circle cx="12" cy="12" r="4.5"/>
+              <path d="M12 1.5v2.5M12 20v2.5M1.5 12H4M20 12h2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/>
+            </svg>
+            <svg class="theme-icon theme-icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20.5 14.2A8.5 8.5 0 1 1 9.8 3.5a6.7 6.7 0 0 0 10.7 10.7z"/>
+            </svg>
+          </button>
+        </div>
       </header>
 
       <h1 class="headline" id="headline">
@@ -58,16 +74,12 @@
           <span class="time-value" id="end-value" hidden></span>
         </div>
         <div class="action">
-          <button id="save" type="submit" disabled>Save</button>
+          <button id="save" class="btn" type="submit" disabled>Save</button>
           <p class="lock-status" id="lock-status" hidden><svg class="icon" width="14" height="14" aria-hidden="true"><use href="#icon-lock"/></svg>Locked</p>
         </div>
       </form>
       <p class="message" id="form-message" role="status" aria-live="polite"></p>
 
-      <!-- Closed until the user opens it (disclosure.js). More settings can be added inside the
-           panel later, or this button can lead to a subpage instead.
-           The switches are UI only for now: not saved, and they block nothing yet. While focus
-           is active they are frozen (options.js, options.css). -->
       <section class="settings" aria-label="Settings">
         <button type="button" class="disclosure" aria-expanded="false" aria-controls="settings-panel">
           <span class="disclosure-label">Settings</span>
@@ -78,7 +90,7 @@
           <div class="panel-inner">
             <div class="options" role="group" aria-label="Also block">
               <label class="option">
-                <input class="option-input" type="checkbox" role="switch" name="block-shorts">
+                <input class="option-input" type="checkbox" role="switch" data-option="shorts">
                 <span class="option-name">Shorts</span>
                 <span class="option-state" aria-hidden="true"></span>
                 <span class="toggle" aria-hidden="true">
@@ -86,7 +98,7 @@
                 </span>
               </label>
               <label class="option">
-                <input class="option-input" type="checkbox" role="switch" name="block-subscriptions">
+                <input class="option-input" type="checkbox" role="switch" data-option="subscriptions">
                 <span class="option-name">Subscriptions</span>
                 <span class="option-state" aria-hidden="true"></span>
                 <span class="toggle" aria-hidden="true">
@@ -104,8 +116,8 @@
       <p id="confirm-body"></p>
       <p class="confirm-lock"><svg class="icon" width="16" height="16" aria-hidden="true"><use href="#icon-lock"/></svg><span id="confirm-lock-text"></span></p>
       <div class="confirm-actions">
-        <button type="button" class="secondary" id="confirm-cancel" autofocus>Go back</button>
-        <button type="button" id="confirm-continue">Continue</button>
+        <button type="button" class="btn btn-secondary" id="confirm-cancel" autofocus>Go back</button>
+        <button type="button" class="btn" id="confirm-continue">Continue</button>
       </div>
     </dialog>
   </body>
