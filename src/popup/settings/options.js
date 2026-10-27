@@ -32,6 +32,16 @@ function shake(input) {
   input.closest(".option").querySelector(".toggle").animate(SHAKE, { duration: 320, easing: "ease-out" });
 }
 
+// A main switch carries the entries nested under it: switching it on or off does the same to
+// all of them. The exception is a sealed entry, which can't be switched off during the lock.
+function carryChildren(parent, isSealed) {
+  const group = parent.closest(".option").nextElementSibling;
+  if (!group?.classList.contains("option-children")) return;
+  for (const child of group.querySelectorAll(".option-input")) {
+    if (parent.checked || !isSealed(child.dataset.option)) child.checked = parent.checked;
+  }
+}
+
 // Flipping a switch only changes the draft. onEdit runs after each flip, onRefused when someone
 // tries to switch off a sealed one, and onSave gets the options when Save is pressed.
 export function listenToOptions({ isSealed, onEdit, onRefused, onSave }) {
@@ -45,7 +55,10 @@ export function listenToOptions({ isSealed, onEdit, onRefused, onSave }) {
       shake(input);
       onRefused();
     });
-    input.addEventListener("change", onEdit);
+    input.addEventListener("change", () => {
+      carryChildren(input, isSealed);
+      onEdit();
+    });
   }
   saveButton.addEventListener("click", () => onSave(readOptions()));
 }
