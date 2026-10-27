@@ -83,7 +83,7 @@ function render() {
 setMessageHint((line) => {
   const now = new Date();
   if (isLocked(now)) {
-    return line === "drawer" ? { text: addOnlyNotice(now), kind: "warning" } : { text: lockedNotice(now), kind: "notice" };
+    return line === "drawer" ? { text: addOnlyNotice(now), kind: "warning" } : { text: lockedNotice(now), kind: "" };
   }
   if (line === "drawer") return NO_MESSAGE;
   const { start, end } = readDraft();

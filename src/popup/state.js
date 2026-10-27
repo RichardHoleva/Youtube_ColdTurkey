@@ -17,7 +17,7 @@ function until(now) {
   return FocusSchedule.timeLabel(FocusSchedule.nextTransition(state.schedule, now));
 }
 
-export const lockedNotice = (now) => `Hours are locked until ${until(now)}.`;
+export const lockedNotice = (now) => `Locked until ${until(now)}.`;
 export const addOnlyNotice = (now) => `Additional blocks can be added, not removed.`;
 export const keptBlockedNotice = (now) => `Blocked items stay blocked until ${until(now)}.`;
 export const savedWhileLockedNotice = (now) => `Saved. New blocks stay on until ${until(now)}.`;

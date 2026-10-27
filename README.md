@@ -10,7 +10,7 @@ Think of it as a cold-turkey blocker for the recommendation algorithm, not for Y
 - **Leaves the useful parts alone:** search, the player, comments, playlist controls and channel pages.
 - **Can also block Subscriptions.** Switch it on in the block panel and, during the focus window, the subscriptions feed and the sidebar links to it disappear. Left off, subscriptions stay available.
 - **Does nothing until you set it up.** A fresh install blocks nothing. You choose your hours first, and the lock starts only after you save and confirm.
-- **Locks its own settings** while the window is active, so you can't just change them when the urge hits. The hours turn read-only ("Hours are locked until HH:mm") and a block you switched on can't be switched off. You can still block more during the lock, but only in that direction. Everything unlocks when the window ends.
+- **Locks its own settings** while the window is active, so you can't just change them when the urge hits. The hours turn read-only ("Locked until HH:mm") and a block you switched on can't be switched off. You can still block more during the lock, but only in that direction. Everything unlocks when the window ends.
 - **Repeats every day** in your computer's local time. Overnight windows such as 22:00-06:00 work too.
 - **Stays private.** The schedule is stored locally in your browser, with no accounts, servers or tracking.
     

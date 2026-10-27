@@ -262,7 +262,7 @@ test('toolbar title and rejection messages are English and use the real next tra
 test('night schedule title and lock message name the end after midnight', async () => {
   const app = await worker({ initial: { schedule: night }, time: '2026-10-24T23:00:00' });
   assert.equal(app.titles.at(-1), 'Focus Lock: no feed until 06:00');
-  assert.equal((await app.message({ type: 'SAVE_SCHEDULE', schedule: day })).message, 'Hours are locked until 06:00.');
+  assert.equal((await app.message({ type: 'SAVE_SCHEDULE', schedule: day })).message, 'Locked until 06:00.');
 });
 
 test('unreachable YouTube tabs do not break state updates', async () => {

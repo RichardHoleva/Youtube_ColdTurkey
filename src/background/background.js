@@ -26,7 +26,7 @@ const untilLabel = (state) => FocusSchedule.timeLabel(new Date(state.nextChange)
 
 // The popup also refuses while locked, but its clock can be stale; these checks are the real lock.
 async function saveSchedule(schedule, state) {
-  if (state.active) return refusal("LOCKED", `Hours are locked until ${untilLabel(state)}.`, state);
+  if (state.active) return refusal("LOCKED", `Locked until ${untilLabel(state)}.`, state);
   if (!FocusSchedule.validate(schedule)) return refusal("INVALID", "Enter two different times as HH:mm.", state);
   await chrome.storage.local.set({ schedule: FocusSchedule.normalize(schedule) });
   return { ok: true, state: await synchronize() };
