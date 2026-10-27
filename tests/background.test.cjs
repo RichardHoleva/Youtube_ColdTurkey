@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -283,25 +283,25 @@ test('storage errors return a visible failure instead of falsely reporting a sav
 
 test('switches start off and travel with the state', async () => {
   const app = await worker();
-  assert.deepEqual((await app.message({ type: 'GET_STATE' })).state.options, { shorts: false, subscriptions: false });
-  assert.deepEqual(app.broadcasts.at(-1).message.state.options, { shorts: false, subscriptions: false });
+  assert.deepEqual((await app.message({ type: 'GET_STATE' })).state.options, { sidebar: false, shorts: false, subscriptions: false });
+  assert.deepEqual(app.broadcasts.at(-1).message.state.options, { sidebar: false, shorts: false, subscriptions: false });
 });
 
 test('switches can be saved while unlocked and leave the schedule alone', async () => {
   const app = await worker({ initial: { schedule: night } });
-  const response = await app.message({ type: 'SAVE_OPTIONS', options: { shorts: false, subscriptions: true } });
+  const response = await app.message({ type: 'SAVE_OPTIONS', options: { sidebar: false, shorts: false, subscriptions: true } });
   assert.equal(response.ok, true);
-  assert.deepEqual(response.state.options, { shorts: false, subscriptions: true });
-  assert.deepEqual(app.storage.options, { shorts: false, subscriptions: true });
+  assert.deepEqual(response.state.options, { sidebar: false, shorts: false, subscriptions: true });
+  assert.deepEqual(app.storage.options, { sidebar: false, shorts: false, subscriptions: true });
   assert.deepEqual(app.storage.schedule, night);
   await app.flush();
   assert.equal(app.broadcasts.at(-1).message.state.options.subscriptions, true);
 });
 
 test('a switch that is on cannot be turned off during the lock', async () => {
-  const locked = { shorts: false, subscriptions: true };
+  const locked = { sidebar: false, shorts: false, subscriptions: true };
   const app = await worker({ initial: { schedule: day, options: locked } });
-  const response = await app.message({ type: 'SAVE_OPTIONS', options: { shorts: false, subscriptions: false } });
+  const response = await app.message({ type: 'SAVE_OPTIONS', options: { sidebar: false, shorts: false, subscriptions: false } });
   assert.equal(response.ok, false);
   assert.equal(response.code, 'LOCKED');
   assert.equal(response.message, 'Blocked items stay blocked until 20:00.');
@@ -310,46 +310,46 @@ test('a switch that is on cannot be turned off during the lock', async () => {
 });
 
 test('more can be blocked during the lock, and it stays blocked', async () => {
-  const app = await worker({ initial: { schedule: day, options: { shorts: false, subscriptions: false } } });
-  const response = await app.message({ type: 'SAVE_OPTIONS', options: { shorts: false, subscriptions: true } });
+  const app = await worker({ initial: { schedule: day, options: { sidebar: false, shorts: false, subscriptions: false } } });
+  const response = await app.message({ type: 'SAVE_OPTIONS', options: { sidebar: false, shorts: false, subscriptions: true } });
   assert.equal(response.ok, true);
-  assert.deepEqual(app.storage.options, { shorts: false, subscriptions: true });
+  assert.deepEqual(app.storage.options, { sidebar: false, shorts: false, subscriptions: true });
   assert.deepEqual(app.storage.schedule, day);
   await app.flush();
   assert.equal(app.broadcasts.at(-1).message.state.options.subscriptions, true);
-  const undo = await app.message({ type: 'SAVE_OPTIONS', options: { shorts: false, subscriptions: false } });
+  const undo = await app.message({ type: 'SAVE_OPTIONS', options: { sidebar: false, shorts: false, subscriptions: false } });
   assert.equal(undo.code, 'LOCKED');
   assert.equal(app.storage.options.subscriptions, true);
 });
 
 test('saving the same switches again during the lock is harmless', async () => {
-  const kept = { shorts: false, subscriptions: true };
+  const kept = { sidebar: false, shorts: false, subscriptions: true };
   const app = await worker({ initial: { schedule: day, options: kept } });
   assert.equal((await app.message({ type: 'SAVE_OPTIONS', options: kept })).ok, true);
   assert.deepEqual(app.storage.options, kept);
 });
 
 test('adding one block cannot be combined with dropping another during the lock', async () => {
-  const kept = { shorts: false, subscriptions: true };
+  const kept = { sidebar: false, shorts: false, subscriptions: true };
   const app = await worker({ initial: { schedule: day, options: kept } });
-  const response = await app.message({ type: 'SAVE_OPTIONS', options: { shorts: true, subscriptions: false } });
+  const response = await app.message({ type: 'SAVE_OPTIONS', options: { sidebar: false, shorts: true, subscriptions: false } });
   assert.equal(response.code, 'LOCKED');
   assert.deepEqual(app.storage.options, kept);
   assert.equal(app.writes.length, 0);
 });
 
 test('the hours stay locked even though blocks can be added', async () => {
-  const app = await worker({ initial: { schedule: day, options: { shorts: false, subscriptions: false } } });
-  await app.message({ type: 'SAVE_OPTIONS', options: { shorts: true, subscriptions: false } });
+  const app = await worker({ initial: { schedule: day, options: { sidebar: false, shorts: false, subscriptions: false } } });
+  await app.message({ type: 'SAVE_OPTIONS', options: { sidebar: false, shorts: true, subscriptions: false } });
   assert.equal((await app.message({ type: 'SAVE_SCHEDULE', schedule: night })).code, 'LOCKED');
   assert.deepEqual(app.storage.schedule, day);
 });
 
 test('a popup with a stale clock cannot switch something off once the lock has begun', async () => {
-  const app = await worker({ initial: { schedule: day, options: { shorts: false, subscriptions: true } }, time: '2026-10-24T07:59:59' });
+  const app = await worker({ initial: { schedule: day, options: { sidebar: false, shorts: false, subscriptions: true } }, time: '2026-10-24T07:59:59' });
   assert.equal((await app.message({ type: 'GET_STATE' })).state.active, false);
   app.setTime('2026-10-24T08:00:00');
-  const response = await app.message({ type: 'SAVE_OPTIONS', options: { shorts: false, subscriptions: false } });
+  const response = await app.message({ type: 'SAVE_OPTIONS', options: { sidebar: false, shorts: false, subscriptions: false } });
   assert.equal(response.code, 'LOCKED');
   assert.equal(app.storage.options.subscriptions, true);
 });
@@ -365,9 +365,27 @@ test('malformed switch requests are rejected without touching storage', async ()
 
 test('switches survive a restart and reach YouTube tabs while the lock is on', async () => {
   const first = await worker({ initial: { schedule: night } });
-  await first.message({ type: 'SAVE_OPTIONS', options: { shorts: false, subscriptions: true } });
+  await first.message({ type: 'SAVE_OPTIONS', options: { sidebar: false, shorts: false, subscriptions: true } });
   const restarted = await worker({ initial: first.storage, time: '2026-10-24T23:00:00' });
   const message = restarted.broadcasts.at(-1).message;
   assert.equal(message.state.active, true);
-  assert.deepEqual(message.state.options, { shorts: false, subscriptions: true });
+  assert.deepEqual(message.state.options, { sidebar: false, shorts: false, subscriptions: true });
+});
+
+test('the Sidebar switch follows the same add-only rule as the others', async () => {
+  const app = await worker({ initial: { schedule: day, options: { sidebar: false, shorts: false, subscriptions: false } } });
+  const added = await app.message({ type: 'SAVE_OPTIONS', options: { sidebar: true, shorts: false, subscriptions: false } });
+  assert.equal(added.ok, true);
+  assert.equal(app.storage.options.sidebar, true);
+  const undo = await app.message({ type: 'SAVE_OPTIONS', options: { sidebar: false, shorts: false, subscriptions: false } });
+  assert.equal(undo.code, 'LOCKED');
+  assert.equal(undo.message, 'Blocked items stay blocked until 20:00.');
+  assert.equal(app.storage.options.sidebar, true);
+});
+
+test('options saved before the Sidebar switch existed still load, with the new one off', async () => {
+  const app = await worker({ initial: { schedule: day, options: { shorts: true, subscriptions: false } } });
+  assert.deepEqual((await app.message({ type: 'GET_STATE' })).state.options, { sidebar: false, shorts: true, subscriptions: false });
+  const added = await app.message({ type: 'SAVE_OPTIONS', options: { sidebar: true, shorts: true, subscriptions: false } });
+  assert.equal(added.ok, true);
 });

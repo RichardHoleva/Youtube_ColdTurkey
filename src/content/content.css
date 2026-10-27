@@ -60,6 +60,19 @@ html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-guide-entry-rende
 /* The full sidebar's Shorts entry has no link address. It is found by its label, and by its
    icon for languages where the label is translated. */
 
+/* Sidebar: the whole left menu (the full menu, the narrow icon strip and the button that opens
+   it). Only while the lock is active AND the user switched Sidebar on. */
+html[data-yfl-active="true"][data-yfl-block-sidebar="true"] tp-yt-app-drawer#guide,
+html[data-yfl-active="true"][data-yfl-block-sidebar="true"] ytd-mini-guide-renderer,
+html[data-yfl-active="true"][data-yfl-block-sidebar="true"] ytd-masthead #guide-button {
+  display: none !important;
+}
+
+/* YouTube keeps room beside the page for the menu; with the menu gone, the page gets it back. */
+html[data-yfl-active="true"][data-yfl-block-sidebar="true"] ytd-page-manager {
+  margin-left: 0 !important;
+}
+
 /* The notice card follows the light or dark mode picked in the popup, not YouTube's own theme.
    content.js shows it by setting data-yfl-notice on <html>, and the mode with data-yfl-theme. */
 #yfl-focus-notice {

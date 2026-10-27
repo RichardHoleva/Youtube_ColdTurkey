@@ -125,21 +125,31 @@
 
       <div class="options" role="group" aria-label="Also block">
         <label class="option">
-          <input class="option-input" type="checkbox" role="switch" data-option="shorts">
-          <span class="option-name">Shorts</span>
+          <input class="option-input" type="checkbox" role="switch" data-option="sidebar">
+          <span class="option-name">Sidebar</span>
           <span class="option-state" aria-hidden="true"></span>
           <span class="toggle" aria-hidden="true">
             <span class="toggle-track"></span><span class="toggle-bar"></span><span class="toggle-ticks"></span><span class="toggle-cursor"></span>
           </span>
         </label>
-        <label class="option">
-          <input class="option-input" type="checkbox" role="switch" data-option="subscriptions">
-          <span class="option-name">Subscriptions</span>
-          <span class="option-state" aria-hidden="true"></span>
-          <span class="toggle" aria-hidden="true">
-            <span class="toggle-track"></span><span class="toggle-bar"></span><span class="toggle-ticks"></span><span class="toggle-cursor"></span>
-          </span>
-        </label>
+        <div class="option-children" role="group" aria-label="Sidebar entries">
+          <label class="option">
+            <input class="option-input" type="checkbox" role="switch" data-option="shorts">
+            <span class="option-name">Shorts</span>
+            <span class="option-state" aria-hidden="true"></span>
+            <span class="toggle" aria-hidden="true">
+              <span class="toggle-track"></span><span class="toggle-bar"></span><span class="toggle-ticks"></span><span class="toggle-cursor"></span>
+            </span>
+          </label>
+          <label class="option">
+            <input class="option-input" type="checkbox" role="switch" data-option="subscriptions">
+            <span class="option-name">Subscriptions</span>
+            <span class="option-state" aria-hidden="true"></span>
+            <span class="toggle" aria-hidden="true">
+              <span class="toggle-track"></span><span class="toggle-bar"></span><span class="toggle-ticks"></span><span class="toggle-cursor"></span>
+            </span>
+          </label>
+        </div>
       </div>
       <p class="message" id="drawer-message" role="status" aria-live="polite"></p>
 

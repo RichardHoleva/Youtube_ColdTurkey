@@ -9,6 +9,7 @@ Think of it as a cold-turkey blocker for the recommendation algorithm, not for Y
 - **Hides the home feed** and the recommendations next to the video, but only inside your focus window.
 - **Leaves the useful parts alone:** search, the player, comments, playlist controls and channel pages.
 - **Can also block Subscriptions.** Switch it on in the block panel and, during the focus window, the subscriptions feed and the sidebar links to it disappear. Left off, subscriptions stay available.
+- **Can hide the whole sidebar.** The **Sidebar** switch removes YouTube's left menu during the focus window: the full menu, the narrow icon strip and the button that opens it, and the page uses the space. Shorts and Subscriptions sit under it, so you can instead hide just those two, or all of them.
 - **Can also block Shorts.** With the Shorts switch on, during the focus window the Shorts player, the Shorts shelves and tiles in search results and feeds, the Shorts tab on channels and the sidebar link all disappear. A Short opened from a link shows a "No Shorts until HH:mm" card and is stopped, so it can't keep playing sound behind it. Left off, Shorts work as usual.
 - **Does nothing until you set it up.** A fresh install blocks nothing. You choose your hours first, and the lock starts only after you save and confirm.
 - **Locks its own settings** while the window is active, so you can't just change them when the urge hits. The hours turn read-only ("Locked until HH:mm") and a block you switched on can't be switched off. You can still block more during the lock, but only in that direction. Everything unlocks when the window ends.
@@ -33,7 +34,7 @@ You can also set the hours on the 24-hour bar itself. Drag the grip at either en
 
 A confirmation popup explains what will happen, including that you won't be able to change any settings until the window ends. Click **Continue** to save, or **Go back** to change the hours. Nothing is saved and nothing is locked until you continue. If the window includes the current time, the lock starts immediately. Otherwise it starts at the **From** time.
 
-The gear button at the top left of the popup slides out the **Also block** panel, where you choose what else to hide. Close it with the arrow in the same spot or with Esc, and it slides back. Flipping a switch only changes a draft: press **Save** at the bottom of the panel to store it, and the panel closes. Leaving with the arrow or Esc throws the draft away. During the lock you can turn more switches on and save them, and each saved one gets a padlock because it stays on until the window ends; the ones already on can't be turned off. Both the **Shorts** and **Subscriptions** switches work.
+The gear button at the top left of the popup slides out the **Also block** panel, where you choose what else to hide. Close it with the arrow in the same spot or with Esc, and it slides back. Flipping a switch only changes a draft: press **Save** at the bottom of the panel to store it, and the panel closes. Leaving with the arrow or Esc throws the draft away. During the lock you can turn more switches on and save them, and each saved one gets a padlock because it stays on until the window ends; the ones already on can't be turned off. **Sidebar** is the main switch, with **Shorts** and **Subscriptions** indented under it. Sidebar hides the whole left menu. Shorts and Subscriptions also hide their own menu entry, and they go further than the menu: they block those parts of YouTube themselves (see above). They work on their own, so Shorts can be blocked with the sidebar left in place.
 
 The sun/moon switch in the top bar changes between light and dark mode. It remembers your choice, starts out following your system setting, and keeps working during a lock. The "No feed until HH:mm" card on YouTube follows the same choice, including live while a YouTube tab is open.
 
@@ -67,7 +68,7 @@ icons/                   Toolbar and store icons
 src/
   shared/                Used by the background worker, the content script and the popup
     schedule.js          Time-window rules: parsing, overnight windows, DST-safe transitions
-    options.js           The switchable extras (Shorts, Subscriptions) and their validation
+    options.js           The switchable extras (Sidebar, Shorts, Subscriptions) and their validation
     theme.js             Light or dark: a saved choice wins, otherwise follow the system
     card-title.js        The card's title: default, 24-character limit, tidying
   background/            Service worker
