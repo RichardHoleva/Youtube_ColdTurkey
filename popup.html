@@ -6,10 +6,22 @@
     <meta name="color-scheme" content="light">
     <title>Focus Lock</title>
     <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="disclosure.css">
+    <link rel="stylesheet" href="options.css">
     <script src="schedule.js" defer></script>
     <script src="popup.js" defer></script>
+    <script src="disclosure.js" defer></script>
+    <script src="options.js" defer></script>
   </head>
   <body data-state="loading">
+    <!-- The lock icon, drawn once and reused wherever the popup says "locked". -->
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <symbol id="icon-lock" viewBox="0 0 16 16" fill="none">
+        <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/>
+        <path d="M5.25 7V5a2.75 2.75 0 0 1 5.5 0v2" stroke="currentColor" stroke-width="1.5"/>
+      </symbol>
+    </svg>
+
     <main>
       <header class="topbar">
         <span class="brand">Focus Lock</span>
@@ -47,15 +59,50 @@
         </div>
         <div class="action">
           <button id="save" type="submit" disabled>Save</button>
-          <p class="lock-status" id="lock-status" hidden><svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true"><rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M5.25 7V5a2.75 2.75 0 0 1 5.5 0v2" stroke="currentColor" stroke-width="1.5"/></svg>Locked</p>
+          <p class="lock-status" id="lock-status" hidden><svg class="icon" width="14" height="14" aria-hidden="true"><use href="#icon-lock"/></svg>Locked</p>
         </div>
       </form>
       <p class="message" id="form-message" role="status" aria-live="polite"></p>
+
+      <!-- Closed until the user opens it (disclosure.js). More settings can be added inside the
+           panel later, or this button can lead to a subpage instead.
+           The switches are UI only for now: not saved, and they block nothing yet. While focus
+           is active they are frozen (options.js, options.css). -->
+      <section class="settings" aria-label="Settings">
+        <button type="button" class="disclosure" aria-expanded="false" aria-controls="settings-panel">
+          <span class="disclosure-label">Settings</span>
+          <span class="options-lock" aria-hidden="true"><svg class="icon" width="14" height="14"><use href="#icon-lock"/></svg>Locked</span>
+          <span class="disclosure-mark" aria-hidden="true"></span>
+        </button>
+        <div class="panel" id="settings-panel" inert>
+          <div class="panel-inner">
+            <div class="options" role="group" aria-label="Also block">
+              <label class="option">
+                <input class="option-input" type="checkbox" role="switch" name="block-shorts">
+                <span class="option-name">Shorts</span>
+                <span class="option-state" aria-hidden="true"></span>
+                <span class="toggle" aria-hidden="true">
+                  <span class="toggle-track"></span><span class="toggle-bar"></span><span class="toggle-ticks"></span><span class="toggle-cursor"></span>
+                </span>
+              </label>
+              <label class="option">
+                <input class="option-input" type="checkbox" role="switch" name="block-subscriptions">
+                <span class="option-name">Subscriptions</span>
+                <span class="option-state" aria-hidden="true"></span>
+                <span class="toggle" aria-hidden="true">
+                  <span class="toggle-track"></span><span class="toggle-bar"></span><span class="toggle-ticks"></span><span class="toggle-cursor"></span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
 
-    <dialog class="confirm" id="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-body">
+    <dialog class="confirm" id="confirm" aria-labelledby="confirm-title" aria-describedby="confirm-body confirm-lock-text">
       <h2 id="confirm-title"></h2>
       <p id="confirm-body"></p>
+      <p class="confirm-lock"><svg class="icon" width="16" height="16" aria-hidden="true"><use href="#icon-lock"/></svg><span id="confirm-lock-text"></span></p>
       <div class="confirm-actions">
         <button type="button" class="secondary" id="confirm-cancel" autofocus>Go back</button>
         <button type="button" id="confirm-continue">Continue</button>

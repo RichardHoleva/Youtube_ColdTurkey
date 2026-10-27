@@ -21,18 +21,20 @@
   const confirmDialog = document.getElementById("confirm");
   const confirmTitle = document.getElementById("confirm-title");
   const confirmBody = document.getElementById("confirm-body");
+  const confirmLock = document.getElementById("confirm-lock-text");
   const confirmCancel = document.getElementById("confirm-cancel");
   const confirmContinue = document.getElementById("confirm-continue");
   const DAY_MINUTES = 24 * 60;
   const RETRY_TICKS = 3;
   let schedule = null; // the saved schedule; null until the user saves one
+  const NO_MESSAGE = Object.freeze({ text: "", kind: "" });
   let pendingDraft = null; // the schedule waiting for the user's confirmation
   let loaded = false;
   let loadFailed = false;
   let saving = false;
   let lastActive = null;
   let retryCountdown = RETRY_TICKS;
-  let message = { text: "", kind: "" };
+  let message = NO_MESSAGE;
 
   function setText(element, value) {
     if (element.textContent !== value) element.textContent = value;
@@ -64,18 +66,33 @@
     paintMessage();
   }
 
-  function paintMessage() {
+  // Focus is active, so the saved schedule is in force and no setting can be changed.
+  function isLocked(now) {
+    return loaded && FocusSchedule.isActive(schedule, now);
+  }
+
+  // Only call while locked: it names the moment the lock ends.
+  function lockedNotice(now) {
+    return `Settings are locked until ${FocusSchedule.timeLabel(FocusSchedule.nextTransition(schedule, now))}.`;
+  }
+
+  // What the message line says when nothing has been reported: the lock, or a tip
+  // about what is typed in the inputs.
+  function hintMessage() {
+    const now = new Date();
+    if (isLocked(now)) return { text: lockedNotice(now), kind: "notice" };
+    if (startInput.hidden) return NO_MESSAGE;
     const from = FocusSchedule.parseTime(startInput.value);
     const to = FocusSchedule.parseTime(endInput.value);
-    let hint = "";
-    if (!message.text && !startInput.hidden) {
-      if (from !== null && to !== null && from > to) hint = "Runs through midnight.";
-      else if (loaded && !schedule) hint = "Nothing is blocked until you save.";
-    }
-    setText(formMessage, message.text || hint);
-    const kind = message.text ? message.kind : "";
-    formMessage.classList.toggle("success", kind === "success");
-    formMessage.classList.toggle("error", kind === "error");
+    if (from !== null && to !== null && from > to) return { text: "Runs through midnight.", kind: "" };
+    if (loaded && !schedule) return { text: "Nothing is blocked until you save.", kind: "" };
+    return NO_MESSAGE;
+  }
+
+  function paintMessage() {
+    const shown = message.text ? message : hintMessage();
+    setText(formMessage, shown.text);
+    for (const kind of ["success", "error", "notice"]) formMessage.classList.toggle(kind, shown.kind === kind);
   }
 
   function markInvalid(...inputs) {
@@ -142,13 +159,15 @@
   function render() {
     const now = new Date();
     setText(clockTime, FocusSchedule.timeLabel(now));
-    const active = loaded && FocusSchedule.isActive(schedule, now);
+    const active = isLocked(now);
 
     // A draft cannot survive into a locked interval: show the saved schedule.
     if (loaded && active && lastActive === false && draftDiffers()) {
       adoptSchedule(schedule, true);
       showMessage("Focus has started. Unsaved changes were discarded.");
     }
+    // Replace any "locked until" message once it stops being true.
+    if (loaded && !active && lastActive === true) showMessage("Focus has ended. Settings are unlocked.");
     if (loaded) lastActive = active;
 
     // "setup" is a fresh install: nothing saved, so nothing is locked yet.
@@ -186,8 +205,12 @@
     const active = FocusSchedule.isActive(pendingDraft, now);
     setText(confirmTitle, active ? "Start focus now?" : "Lock in this schedule?");
     setText(confirmBody, active
-      ? `YouTube’s feed will be hidden until ${pendingDraft.end}. You won’t be able to change or stop it before then.`
-      : `Focus starts at ${pendingDraft.start} and repeats every day. Once it starts, you won’t be able to change or stop it until ${pendingDraft.end}.`);
+      ? `YouTube’s feed will be hidden until ${pendingDraft.end}.`
+      : `Focus starts at ${pendingDraft.start} and repeats every day.`);
+    // The point of the dialog: once the lock is on, nothing can be changed or switched off.
+    setText(confirmLock, active
+      ? "You won’t be able to change any settings until then."
+      : `Once it starts, you won’t be able to change any settings until ${pendingDraft.end}.`);
   }
 
   async function refresh() {
@@ -213,9 +236,9 @@
     event.preventDefault();
     if (!loaded || saving) return;
     const now = new Date();
-    if (FocusSchedule.isActive(schedule, now)) {
+    if (isLocked(now)) {
       render();
-      showMessage(`Schedule is locked until ${FocusSchedule.timeLabel(FocusSchedule.nextTransition(schedule, now))}.`, "error");
+      showMessage(lockedNotice(now), "error");
       return;
     }
 
@@ -270,6 +293,14 @@
   });
   // Also runs for Escape and for the lock taking over, so a stale draft is never kept.
   confirmDialog.addEventListener("close", () => { pendingDraft = null; });
+
+  // options.js refuses a change to a locked switch and reports it here. The lock may have
+  // ended in the last second, in which case render() unlocks the popup instead.
+  document.addEventListener("settings-locked", () => {
+    const now = new Date();
+    if (isLocked(now)) showMessage(lockedNotice(now), "error");
+    else render();
+  });
 
   // 24-hour entry that does not depend on the browser's locale.
   function stepTime(input, delta) {

@@ -11,6 +11,7 @@
   --outline: #777775;
   --accent: #e5481a;
   --accent-ink: #b3330d;
+  --sweep: 260ms cubic-bezier(.3, .7, .2, 1); /* the shared "sliding" motion: switches, panels */
   --sans: "Inter", "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
   --mono: "SF Mono", "Cascadia Mono", Consolas, Menlo, "Liberation Mono", "DejaVu Sans Mono", monospace;
 }
@@ -59,17 +60,21 @@ button { width: 100%; height: 46px; padding: 0 14px; border: 0; border-radius: 4
 button:hover:enabled { background: #343432; }
 button:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 button:disabled { background: #9c9992; color: var(--bg); cursor: default; }
+.icon { flex: none; }
 .lock-status { display: flex; align-items: center; gap: 6px; height: 46px; color: var(--muted); font-size: 13px; }
 
 .confirm { width: 340px; max-width: calc(100% - 32px); padding: 22px; border: 1px solid var(--ink); border-radius: 4px; background: var(--bg); color: var(--ink); }
 .confirm::backdrop { background: rgb(21 21 21 / .5); }
 .confirm h2 { margin: 0 0 10px; font: 700 22px/1.1 var(--sans); letter-spacing: -.03em; }
 .confirm p { font-size: 14px; line-height: 1.45; }
-.confirm-actions { display: flex; gap: 10px; margin-top: 20px; }
+/* The line that spells out the consequence: nothing can be changed once the lock is on. */
+.confirm .confirm-lock { display: flex; align-items: flex-start; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rule); font-size: 13px; font-weight: 700; line-height: 1.4; }
+.confirm-lock .icon { margin-top: 1px; }
+.confirm-actions { display: flex; gap: 10px; margin-top: 18px; }
 .confirm-actions button { flex: 1 1 0; }
 button.secondary { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1px var(--outline); }
 button.secondary:hover:enabled { background: var(--field); }
 
 .message { min-height: 18px; margin-top: 10px; font-size: 13px; line-height: 18px; color: var(--muted); }
-.message.success { color: var(--ink); font-weight: 600; }
+.message.success, .message.notice { color: var(--ink); font-weight: 600; }
 .message.error { color: var(--accent-ink); font-weight: 600; }
