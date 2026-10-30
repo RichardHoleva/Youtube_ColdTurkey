@@ -20,7 +20,7 @@ body[data-state="locked"] .options-lock { display: flex; }
    keep their full-width rules; only the content moves. */
 .option-children .option { padding-left: 22px; }
 .option-children .option::before { content: ""; position: absolute; left: 8px; top: -1px; bottom: 0; width: 2px; background: var(--rule); }
-.option-children .option-name { font-weight: 500; }
+.option-children .option-name { font-size: 14px; font-weight: 500; }
 
 .option-state { min-width: 56px; text-align: right; font: 400 12px/1 var(--mono); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
 .option-state::before { content: "Open"; }

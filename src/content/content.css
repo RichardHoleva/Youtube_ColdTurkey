@@ -26,14 +26,32 @@ html[data-yfl-active="true"][data-yfl-page="watch"] ytd-watch-next-secondary-res
   display: none !important;
 }
 
-/* Subscriptions: the feed page and the sidebar links to it. Only while the lock is active
-   AND the user switched Subscriptions on. */
+/* Subscriptions: the feed page, the sidebar links to it, and the list of subscribed channels in
+   the sidebar. That list is its own section, and it is recognised three ways, because YouTube
+   builds it differently from account to account: it holds the "All subscriptions" link
+   (/feed/channels); or it holds links to channels (/@name) while not being the main section
+   (Home) or the "You" section (History, "Your channel"); or content.js marked it because its
+   heading is the same word as the Subscriptions entry. Only while the lock is active AND the
+   user switched Subscriptions on. */
 html[data-yfl-active="true"][data-yfl-block-subscriptions="true"] ytd-browse[page-subtype="subscriptions"] #primary,
 html[data-yfl-active="true"][data-yfl-block-subscriptions="true"] ytd-browse[page-subtype="subscriptions"] #header,
 html[data-yfl-active="true"][data-yfl-block-subscriptions="true"] ytd-guide-entry-renderer:has(a[href="/feed/subscriptions"]),
 html[data-yfl-active="true"][data-yfl-block-subscriptions="true"] ytd-mini-guide-entry-renderer:has(a[href="/feed/subscriptions"]),
+html[data-yfl-active="true"][data-yfl-block-subscriptions="true"] ytd-guide-section-renderer:has(a[href="/feed/channels"]),
+html[data-yfl-active="true"][data-yfl-block-subscriptions="true"] ytd-guide-section-renderer:has(a[href^="/@"]):not(:has(a[href="/feed/history"], a[href="/"])),
+html[data-yfl-active="true"][data-yfl-block-subscriptions="true"] ytd-guide-section-renderer[data-yfl-channels],
 html[data-yfl-active="true"][data-yfl-block-subscriptions="true"][data-yfl-page="subscriptions"] ytd-browse #primary,
 html[data-yfl-active="true"][data-yfl-block-subscriptions="true"][data-yfl-page="subscriptions"] ytd-browse #header {
+  display: none !important;
+}
+
+/* History: the page and its sidebar entry (not the "report history" one, which has another link).
+   Only while the lock is active AND the user switched History on. */
+html[data-yfl-active="true"][data-yfl-block-history="true"] ytd-browse[page-subtype="history"] #primary,
+html[data-yfl-active="true"][data-yfl-block-history="true"] ytd-browse[page-subtype="history"] #header,
+html[data-yfl-active="true"][data-yfl-block-history="true"] ytd-guide-entry-renderer:has(a[href="/feed/history"]),
+html[data-yfl-active="true"][data-yfl-block-history="true"][data-yfl-page="history"] ytd-browse #primary,
+html[data-yfl-active="true"][data-yfl-block-history="true"][data-yfl-page="history"] ytd-browse #header {
   display: none !important;
 }
 

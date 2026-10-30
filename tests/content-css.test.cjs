@@ -6,12 +6,35 @@ const { read } = require('./helpers.cjs');
 
 const css = read('content', 'content.css').replace(/\/\*[\s\S]*?\*\//g, '');
 
+// A selector list split on the commas between selectors, not the ones inside :has(...) or :not(...).
+function splitSelectors(list) {
+  const selectors = [];
+  let depth = 0;
+  let current = '';
+  for (const character of list) {
+    if (character === '(' || character === '[') depth += 1;
+    if (character === ')' || character === ']') depth -= 1;
+    if (character === ',' && depth === 0) {
+      selectors.push(current);
+      current = '';
+    } else {
+      current += character;
+    }
+  }
+  return [...selectors, current];
+}
+
 // Every selector of every rule that hides something with `display: none !important`.
 const hiding = [...css.matchAll(/([^{}]+)\{\s*display:\s*none\s*!important;\s*\}/g)]
-  .flatMap((match) => match[1].split(',').map((selector) => selector.trim().replace(/\s+/g, ' ')))
+  .flatMap((match) => splitSelectors(match[1]).map((selector) => selector.trim().replace(/\s+/g, ' ')))
   .filter((selector) => selector && !selector.includes('yfl-focus-notice'));
 const routeFree = hiding.filter((selector) => !selector.includes('data-yfl-page'));
-const subscriptions = hiding.filter((selector) => /subscriptions/.test(selector));
+const SUBSCRIPTIONS = /subscriptions|feed\/channels/; // the channel list is found by its "All subscriptions" link
+const subscriptions = hiding.filter((selector) => SUBSCRIPTIONS.test(selector));
+// The History page and its own sidebar entry. (A rule that merely mentions the History link to stay
+// away from the "You" section, like the channel list one, is not a History rule.)
+const HISTORY = /block-history|page-subtype="history"|data-yfl-page="history"|feed\/history"\]\)$/;
+const historyRules = hiding.filter((selector) => HISTORY.test(selector));
 const SHORTS = /shorts|reel|m13\.467 1\.19/i; // the Shorts icon's path counts too: that rule never says "shorts"
 const shorts = hiding.filter((selector) => SHORTS.test(selector));
 const SIDEBAR = /tp-yt-app-drawer#guide|ytd-mini-guide-renderer|#guide-button/; // the menu itself, not its entries
@@ -31,11 +54,11 @@ test('home feed and watch sidebar are hidden regardless of the route flag', () =
   }
 });
 
-test('route-independent rules can only ever match the home feed, the watch sidebar or subscriptions', () => {
+test('the always-on rules can only ever match the home feed or the watch sidebar', () => {
   // A bare "ytd-browse ytd-rich-grid-renderer" would also hide channel Videos tabs, so it
-  // must stay behind the home-route flag.
-  const allowed = /ytd-browse\[page-subtype="(home|subscriptions)"\]|ytd-watch-flexy|ytd-watch-grid|ytd-watch-next-secondary-results-renderer|ytd-(mini-)?guide-entry-renderer:has\(a\[href="\/feed\/subscriptions"\]\)/;
-  const others = routeFree.filter((selector) => !shorts.includes(selector) && !sidebar.includes(selector));
+  // must stay behind the home-route flag. Each switch has its own group of rules, checked below.
+  const allowed = /ytd-browse\[page-subtype="home"\]|ytd-watch-flexy|ytd-watch-grid|ytd-watch-next-secondary-results-renderer/;
+  const others = routeFree.filter((selector) => ![shorts, sidebar, subscriptions, historyRules].some((group) => group.includes(selector)));
   assert.ok(others.length > 0);
   for (const selector of others) {
     assert.ok(selector.startsWith('html[data-yfl-active="true"]'), `must require an active interval: ${selector}`);
@@ -60,9 +83,52 @@ test('subscriptions are only hidden when their switch is on', () => {
   }
 });
 
-test('no other rule can reach the subscriptions page or its sidebar links', () => {
+const CHANNEL_SECTIONS = [
+  'ytd-guide-section-renderer:has(a[href="/feed/channels"])',
+  'ytd-guide-section-renderer:has(a[href^="/@"]):not(:has(a[href="/feed/history"], a[href="/"]))',
+  'ytd-guide-section-renderer[data-yfl-channels]'
+];
+
+test('every Subscriptions rule names the feed page, its sidebar link or the list of channels', () => {
+  const aSubscriptionsThing = /ytd-browse\[page-subtype="subscriptions"\] #(primary|header)$|\[data-yfl-page="subscriptions"\] ytd-browse #(primary|header)$|ytd-(mini-)?guide-entry-renderer:has\(a\[href="\/feed\/subscriptions"\]\)$/;
+  const channelSection = (selector) => CHANNEL_SECTIONS.some((section) => selector.endsWith(section));
+  for (const selector of subscriptions) {
+    assert.ok(aSubscriptionsThing.test(selector) || channelSection(selector), `not clearly Subscriptions: ${selector}`);
+  }
+});
+
+test('the channel list rules take only a section of channels, never the whole menu or the sections around it', () => {
+  // A bare "ytd-guide-section-renderer" would hide the whole menu. A section that holds channel
+  // links must also not be the main one (Home) or the "You" one (History and "Your channel").
+  const section = subscriptions.filter((selector) => selector.includes('ytd-guide-section-renderer'));
+  assert.equal(section.length, CHANNEL_SECTIONS.length);
+  for (const wanted of CHANNEL_SECTIONS) assert.ok(section.some((selector) => selector.endsWith(wanted)), wanted);
+  const byLinks = section.find((selector) => selector.includes('a[href^="/@"]'));
+  assert.ok(byLinks.includes(':not(:has(a[href="/feed/history"], a[href="/"]))'), 'the channel-links rule must spare the You and main sections');
+});
+
+test('no other rule can reach the subscriptions page, its sidebar links or the channel list', () => {
   const others = hiding.filter((selector) => !subscriptions.includes(selector));
-  for (const selector of others) assert.ok(!/subscriptions/.test(selector), selector);
+  for (const selector of others) assert.ok(!SUBSCRIPTIONS.test(selector), selector);
+});
+
+test('History is only hidden when its switch is on', () => {
+  assert.ok(historyRules.length > 0);
+  for (const selector of historyRules) {
+    assert.ok(selector.startsWith('html[data-yfl-active="true"][data-yfl-block-history="true"]'), `needs the lock and the History switch: ${selector}`);
+  }
+});
+
+test('every History rule names the history page or its own sidebar entry', () => {
+  // The exact link matters: the "report history" entry links to /reporthistory and must stay.
+  const aHistoryThing = /ytd-browse\[page-subtype="history"\] #(primary|header)$|\[data-yfl-page="history"\] ytd-browse #(primary|header)$|ytd-guide-entry-renderer:has\(a\[href="\/feed\/history"\]\)$/;
+  for (const selector of historyRules) assert.match(selector, aHistoryThing, `not clearly History: ${selector}`);
+  assert.ok(!css.includes('*="history"') && !css.includes('reporthistory'), 'no loose history match');
+});
+
+test('no other rule can reach History', () => {
+  const others = hiding.filter((selector) => !historyRules.includes(selector));
+  for (const selector of others) assert.ok(!HISTORY.test(selector), selector);
 });
 
 test('Shorts are only hidden when their switch is on', () => {

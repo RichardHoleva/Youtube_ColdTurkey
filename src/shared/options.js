@@ -2,7 +2,7 @@
 (function (root) {
   "use strict";
 
-  const KEYS = Object.freeze(["sidebar", "shorts", "subscriptions"]);
+  const KEYS = Object.freeze(["sidebar", "shorts", "subscriptions", "history"]);
 
   function validate(value) {
     return Boolean(value && typeof value === "object" && !Array.isArray(value) &&

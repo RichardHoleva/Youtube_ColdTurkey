@@ -18,7 +18,8 @@
     const path = location.pathname.replace(/\/+$/, "") || "/";
     if (path === "/" || path === "/feed/what_to_watch") return "home";
     if (path === "/watch") return "watch";
-    if (path === "/feed/subscriptions") return "subscriptions";
+    if (path === "/feed/subscriptions" || path === "/feed/channels") return "subscriptions";
+    if (path === "/feed/history") return "history";
     if (path === "/shorts" || path.startsWith("/shorts/")) return "shorts";
     return "other";
   }
@@ -32,7 +33,20 @@
     if (page === "home") return cardTitle;
     if (page === "subscriptions" && options.subscriptions) return "No subscriptions";
     if (page === "shorts" && options.shorts) return "No Shorts";
+    if (page === "history" && options.history) return "No history";
     return null;
+  }
+
+  // The sidebar's list of subscribed channels is the section headed with the same word as the
+  // "Subscriptions" entry above it, in whatever language YouTube is in. Mark it, so content.css
+  // can hide it however its links look.
+  function markChannelList() {
+    const label = document.querySelector('ytd-guide-entry-renderer a[href="/feed/subscriptions"]')?.getAttribute("title")?.trim().toLowerCase();
+    if (!label) return;
+    for (const section of document.querySelectorAll("ytd-guide-section-renderer:not([data-yfl-channels])")) {
+      const heading = section.querySelector("h3")?.textContent.trim().toLowerCase();
+      if (heading === label) section.setAttribute("data-yfl-channels", "");
+    }
   }
 
   // A hidden Short keeps playing, sound included, so stop it now and whenever it starts again.
@@ -66,6 +80,7 @@
     setRootAttribute("data-yfl-page", page);
     setRootAttribute("data-yfl-theme", FocusTheme.resolve(savedTheme, matchMedia("(prefers-color-scheme: dark)").matches));
     for (const key of FocusOptions.KEYS) setRootAttribute(`data-yfl-block-${key}`, active && options[key]);
+    if (active && options.subscriptions) markChannelList();
     shortsBlocked = active && options.shorts;
     if (shortsBlocked && page === "shorts") silenceShorts();
 
