@@ -4,6 +4,11 @@
   "use strict";
 
   const HEARTBEAT_MS = 10_000;
+  // A preview lasts this long after the popup last said it was still open, so one that closes without
+  // saying so can't leave the page stuck on a preview.
+  const PREVIEW_LEASE_MS = 3000;
+  let preview = null; // { options, expires }: what the popup's switches would do, before they are saved
+  let previewTimer;
   let plan = null; // the week plan; nothing is hidden until the user has saved one
   let storedPlan = {}; // what storage holds: `occasions`, or the single `schedule` an earlier version saved
   let options = FocusOptions.normalize();
@@ -29,12 +34,13 @@
     if (root.getAttribute(name) !== String(value)) root.setAttribute(name, String(value));
   }
 
-  function noticeLead(page) {
-    if (page === "home") return cardTitle;
-    if (page === "subscriptions" && options.subscriptions) return "No subscriptions";
-    if (page === "shorts" && options.shorts) return "No Shorts";
-    if (page === "history" && options.history) return "No history";
-    return null;
+  // The card for this page, or null. The home card belongs to the lock itself, so a preview never
+  // shows it. The others are named after their switch (the page and the switch share a name), and
+  // `previewOnly` marks one shown only because the popup is previewing that switch.
+  function noticeFor(page, active, blocked, real) {
+    if (page === "home") return active ? { lead: cardTitle, previewOnly: false } : null;
+    const lead = { subscriptions: "No subscriptions", shorts: "No Shorts", history: "No history" }[page];
+    return lead && blocked[page] ? { lead, previewOnly: !real[page] } : null;
   }
 
   // The sidebar's list of subscribed channels is the section headed with the same word as the
@@ -79,16 +85,19 @@
     setRootAttribute("data-yfl-active", active);
     setRootAttribute("data-yfl-page", page);
     setRootAttribute("data-yfl-theme", FocusTheme.resolve(savedTheme, matchMedia("(prefers-color-scheme: dark)").matches));
-    for (const key of FocusOptions.KEYS) setRootAttribute(`data-yfl-block-${key}`, active && options[key]);
-    if (active && options.subscriptions) markChannelList();
-    shortsBlocked = active && options.shorts;
+    const draft = preview && now.getTime() < preview.expires ? preview.options : null;
+    const real = FocusOptions.blocked(options, active, null);
+    const blocked = FocusOptions.blocked(options, active, draft);
+    for (const key of FocusOptions.KEYS) setRootAttribute(`data-yfl-block-${key}`, blocked[key]);
+    if (blocked.subscriptions) markChannelList();
+    shortsBlocked = blocked.shorts;
     if (shortsBlocked && page === "shorts") silenceShorts();
 
     if (reschedule || boundaryTimer === undefined) scheduleBoundary(now);
 
-    const lead = active ? noticeLead(page) : null;
-    setRootAttribute("data-yfl-notice", lead !== null);
-    if (lead) FocusNotice.show(lead, nextChangeLabel);
+    const card = noticeFor(page, active, blocked, real);
+    setRootAttribute("data-yfl-notice", card !== null);
+    if (card) FocusNotice.show(card.lead, nextChangeLabel, card.previewOnly);
   }
 
   function renderSoon() {
@@ -138,6 +147,12 @@
 
   chrome.runtime.onMessage.addListener((message) => {
     if (message?.type === "FOCUS_STATE" && message.state) apply(message.state);
+    if (message?.type === "FOCUS_PREVIEW") {
+      preview = message.options ? { options: FocusOptions.normalize(message.options), expires: Date.now() + PREVIEW_LEASE_MS } : null;
+      clearTimeout(previewTimer);
+      if (preview) previewTimer = setTimeout(() => render(), PREVIEW_LEASE_MS + 50);
+      render();
+    }
   });
 
   // YouTube changes pages without reloading. The observer catches the routes that don't

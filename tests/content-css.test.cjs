@@ -1,4 +1,4 @@
-'use strict';
+﻿'use strict';
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -72,8 +72,27 @@ test('generic feed selectors stay limited to the home route', () => {
   for (const selector of generic) assert.ok(selector.includes('[data-yfl-page="home"]'), selector);
 });
 
-test('nothing outside an active interval is hidden', () => {
-  for (const selector of hiding) assert.ok(selector.includes('[data-yfl-active="true"]'), selector);
+test('nothing is hidden unless the lock is on or a switch\'s own flag is set', () => {
+  // The lock's own rules wait for the active flag. A switch's rules wait for that switch's flag, which
+  // content.js sets only while the lock is on and the switch is, or while the popup previews it.
+  for (const selector of hiding) {
+    assert.ok(selector.includes('[data-yfl-active="true"]') || /^html\[data-yfl-block-(sidebar|shorts|subscriptions|history)="true"\]/.test(selector), selector);
+  }
+});
+
+test('a switch\'s rules depend on its flag alone, so a preview can turn them on without the lock', () => {
+  const switchRules = hiding.filter((selector) => selector.startsWith('html[data-yfl-block-'));
+  assert.ok(switchRules.length > 20);
+  for (const selector of switchRules) assert.ok(!selector.includes('data-yfl-active'), selector);
+  const lockRules = hiding.filter((selector) => !selector.startsWith('html[data-yfl-block-'));
+  for (const selector of lockRules) assert.ok(selector.startsWith('html[data-yfl-active="true"]'), "the lock's own rule must wait for the lock: " + selector);
+});
+
+test('the home feed and its card are never part of a switch', () => {
+  // A preview must not hide the home feed: that is the lock itself, not something the switches control.
+  for (const selector of hiding.filter((selector) => selector.startsWith('html[data-yfl-block-'))) {
+    assert.ok(!/page-subtype="home"|ytd-rich-grid-renderer|ytd-watch-flexy|ytd-watch-next-secondary/.test(selector), selector);
+  }
 });
 
 test('subscriptions are only hidden when their switch is on', () => {
@@ -115,7 +134,7 @@ test('no other rule can reach the subscriptions page, its sidebar links or the c
 test('History is only hidden when its switch is on', () => {
   assert.ok(historyRules.length > 0);
   for (const selector of historyRules) {
-    assert.ok(selector.startsWith('html[data-yfl-active="true"][data-yfl-block-history="true"]'), `needs the lock and the History switch: ${selector}`);
+    assert.ok(selector.startsWith('html[data-yfl-block-history="true"]'), `needs the History switch: ${selector}`);
   }
 });
 
@@ -134,7 +153,7 @@ test('no other rule can reach History', () => {
 test('Shorts are only hidden when their switch is on', () => {
   assert.ok(shorts.length > 0);
   for (const selector of shorts) {
-    assert.ok(selector.startsWith('html[data-yfl-active="true"][data-yfl-block-shorts="true"]'), `needs the lock and the Shorts switch: ${selector}`);
+    assert.ok(selector.startsWith('html[data-yfl-block-shorts="true"]'), `needs the Shorts switch: ${selector}`);
   }
 });
 
@@ -148,7 +167,7 @@ test('every Shorts rule names something that is a Short, so it can never hide or
 test('the sidebar is only hidden when its switch is on', () => {
   assert.ok(sidebar.length > 0);
   for (const selector of sidebar) {
-    assert.ok(selector.startsWith('html[data-yfl-active="true"][data-yfl-block-sidebar="true"]'), `needs the lock and the Sidebar switch: ${selector}`);
+    assert.ok(selector.startsWith('html[data-yfl-block-sidebar="true"]'), `needs the Sidebar switch: ${selector}`);
   }
 });
 
@@ -164,7 +183,7 @@ test('the page only takes the menu\'s room back when the Sidebar switch is on', 
   const margins = [...css.matchAll(/([^{}]+)\{[^}]*margin-left[^}]*\}/g)].map((match) => match[1].trim().replace(/\s+/g, ' '));
   assert.ok(margins.length > 0);
   for (const selector of margins) {
-    assert.equal(selector, 'html[data-yfl-active="true"][data-yfl-block-sidebar="true"] ytd-page-manager', selector);
+    assert.equal(selector, 'html[data-yfl-block-sidebar="true"] ytd-page-manager', selector);
   }
 });
 

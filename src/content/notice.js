@@ -4,6 +4,8 @@ const FocusNotice = (() => {
   let card;
   let heading;
   let leadLine;
+  let untilLine;
+  let previewLine;
   let timeLabel;
   let pageObserver;
   let observedPage;
@@ -20,10 +22,12 @@ const FocusNotice = (() => {
 
     leadLine = create("span", "yfl-notice-line");
     timeLabel = create("span", "yfl-notice-time");
-    const tail = create("span", "yfl-notice-line");
-    tail.append("until ", timeLabel, ".");
+    untilLine = create("span", "yfl-notice-line");
+    untilLine.append("until ", timeLabel, ".");
+    previewLine = create("span", "yfl-notice-line", "(preview, not saved)");
+    previewLine.hidden = true;
     heading = create("h2");
-    heading.append(leadLine, tail);
+    heading.append(leadLine, untilLine, previewLine);
 
     card = create("section");
     card.id = ID;
@@ -70,12 +74,15 @@ const FocusNotice = (() => {
     if (heading.dataset.size !== size) heading.dataset.size = size;
   }
 
-  function show(lead, until) {
+  // A card that only exists because the popup is previewing a switch says so, in place of "until".
+  function show(lead, until, preview = false) {
     if (!document.body) return;
     if (!card?.isConnected) build();
     setSize(lead);
     setText(leadLine, lead);
     setText(timeLabel, until);
+    if (untilLine.hidden !== preview) untilLine.hidden = preview;
+    if (previewLine.hidden !== !preview) previewLine.hidden = !preview;
     position();
   }
 

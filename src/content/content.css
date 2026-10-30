@@ -1,4 +1,4 @@
-/* Hidden by what they ARE, not by the current route: YouTube keeps the old page painted for a
+﻿/* Hidden by what they ARE, not by the current route: YouTube keeps the old page painted for a
    moment after the URL changes, and a route-only rule would let the old feed show through.
    These selectors only match the home feed and the watch sidebar, so they are safe everywhere. */
 html[data-yfl-active="true"] ytd-browse[page-subtype="home"] #primary,
@@ -26,68 +26,72 @@ html[data-yfl-active="true"][data-yfl-page="watch"] ytd-watch-next-secondary-res
   display: none !important;
 }
 
+/* The rules for the switches (Subscriptions, History, Shorts, Sidebar) depend only on the flag content.js
+   sets for each one, data-yfl-block-<switch>. The script sets a flag while the lock is on and the switch is on,
+   and also while the popup is previewing that switch, so a preview shows the effect before anything is
+   saved and before the lock has even started. The rules above this note belong to the lock itself. */
+
 /* Subscriptions: the feed page, the sidebar links to it, and the list of subscribed channels in
    the sidebar. That list is its own section, and it is recognised three ways, because YouTube
    builds it differently from account to account: it holds the "All subscriptions" link
    (/feed/channels); or it holds links to channels (/@name) while not being the main section
    (Home) or the "You" section (History, "Your channel"); or content.js marked it because its
-   heading is the same word as the Subscriptions entry. Only while the lock is active AND the
-   user switched Subscriptions on. */
-html[data-yfl-active="true"][data-yfl-block-subscriptions="true"] ytd-browse[page-subtype="subscriptions"] #primary,
-html[data-yfl-active="true"][data-yfl-block-subscriptions="true"] ytd-browse[page-subtype="subscriptions"] #header,
-html[data-yfl-active="true"][data-yfl-block-subscriptions="true"] ytd-guide-entry-renderer:has(a[href="/feed/subscriptions"]),
-html[data-yfl-active="true"][data-yfl-block-subscriptions="true"] ytd-mini-guide-entry-renderer:has(a[href="/feed/subscriptions"]),
-html[data-yfl-active="true"][data-yfl-block-subscriptions="true"] ytd-guide-section-renderer:has(a[href="/feed/channels"]),
-html[data-yfl-active="true"][data-yfl-block-subscriptions="true"] ytd-guide-section-renderer:has(a[href^="/@"]):not(:has(a[href="/feed/history"], a[href="/"])),
-html[data-yfl-active="true"][data-yfl-block-subscriptions="true"] ytd-guide-section-renderer[data-yfl-channels],
-html[data-yfl-active="true"][data-yfl-block-subscriptions="true"][data-yfl-page="subscriptions"] ytd-browse #primary,
-html[data-yfl-active="true"][data-yfl-block-subscriptions="true"][data-yfl-page="subscriptions"] ytd-browse #header {
+   heading is the same word as the Subscriptions entry. Only while the lock is on and Subscriptions is switched on, or while the popup previews it. */
+html[data-yfl-block-subscriptions="true"] ytd-browse[page-subtype="subscriptions"] #primary,
+html[data-yfl-block-subscriptions="true"] ytd-browse[page-subtype="subscriptions"] #header,
+html[data-yfl-block-subscriptions="true"] ytd-guide-entry-renderer:has(a[href="/feed/subscriptions"]),
+html[data-yfl-block-subscriptions="true"] ytd-mini-guide-entry-renderer:has(a[href="/feed/subscriptions"]),
+html[data-yfl-block-subscriptions="true"] ytd-guide-section-renderer:has(a[href="/feed/channels"]),
+html[data-yfl-block-subscriptions="true"] ytd-guide-section-renderer:has(a[href^="/@"]):not(:has(a[href="/feed/history"], a[href="/"])),
+html[data-yfl-block-subscriptions="true"] ytd-guide-section-renderer[data-yfl-channels],
+html[data-yfl-block-subscriptions="true"][data-yfl-page="subscriptions"] ytd-browse #primary,
+html[data-yfl-block-subscriptions="true"][data-yfl-page="subscriptions"] ytd-browse #header {
   display: none !important;
 }
 
 /* History: the page and its sidebar entry (not the "report history" one, which has another link).
-   Only while the lock is active AND the user switched History on. */
-html[data-yfl-active="true"][data-yfl-block-history="true"] ytd-browse[page-subtype="history"] #primary,
-html[data-yfl-active="true"][data-yfl-block-history="true"] ytd-browse[page-subtype="history"] #header,
-html[data-yfl-active="true"][data-yfl-block-history="true"] ytd-guide-entry-renderer:has(a[href="/feed/history"]),
-html[data-yfl-active="true"][data-yfl-block-history="true"][data-yfl-page="history"] ytd-browse #primary,
-html[data-yfl-active="true"][data-yfl-block-history="true"][data-yfl-page="history"] ytd-browse #header {
+   Only while the lock is on and History is switched on, or while the popup previews it. */
+html[data-yfl-block-history="true"] ytd-browse[page-subtype="history"] #primary,
+html[data-yfl-block-history="true"] ytd-browse[page-subtype="history"] #header,
+html[data-yfl-block-history="true"] ytd-guide-entry-renderer:has(a[href="/feed/history"]),
+html[data-yfl-block-history="true"][data-yfl-page="history"] ytd-browse #primary,
+html[data-yfl-block-history="true"][data-yfl-page="history"] ytd-browse #header {
   display: none !important;
 }
 
 /* Shorts: the player page, the shelves and tiles in feeds and search results, the Shorts tab on
-   channels and the sidebar links. Only while the lock is active AND the user switched Shorts on. */
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-shorts,
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-reel-shelf-renderer,
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-rich-shelf-renderer[is-shorts],
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-rich-section-renderer:has(ytm-shorts-lockup-view-model),
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] grid-shelf-view-model:has(ytm-shorts-lockup-view-model),
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytm-shorts-lockup-view-model,
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytm-shorts-lockup-view-model-v2,
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-video-renderer:has(a[href^="/shorts/"]),
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-rich-item-renderer:has(a[href^="/shorts/"]),
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-grid-video-renderer:has(a[href^="/shorts/"]),
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-compact-video-renderer:has(a[href^="/shorts/"]),
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] yt-tab-shape[tab-title="Shorts"],
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-mini-guide-entry-renderer:has(a[href^="/shorts"]),
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-guide-entry-renderer:has(a[href^="/shorts"]),
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-guide-entry-renderer:has(a[title="Shorts"]),
-html[data-yfl-active="true"][data-yfl-block-shorts="true"] ytd-guide-entry-renderer:has(path[d^="m13.467 1.19-8 4.7"]) {
+   channels and the sidebar links. Only while the lock is on and Shorts is switched on, or while the popup previews it. */
+html[data-yfl-block-shorts="true"] ytd-shorts,
+html[data-yfl-block-shorts="true"] ytd-reel-shelf-renderer,
+html[data-yfl-block-shorts="true"] ytd-rich-shelf-renderer[is-shorts],
+html[data-yfl-block-shorts="true"] ytd-rich-section-renderer:has(ytm-shorts-lockup-view-model),
+html[data-yfl-block-shorts="true"] grid-shelf-view-model:has(ytm-shorts-lockup-view-model),
+html[data-yfl-block-shorts="true"] ytm-shorts-lockup-view-model,
+html[data-yfl-block-shorts="true"] ytm-shorts-lockup-view-model-v2,
+html[data-yfl-block-shorts="true"] ytd-video-renderer:has(a[href^="/shorts/"]),
+html[data-yfl-block-shorts="true"] ytd-rich-item-renderer:has(a[href^="/shorts/"]),
+html[data-yfl-block-shorts="true"] ytd-grid-video-renderer:has(a[href^="/shorts/"]),
+html[data-yfl-block-shorts="true"] ytd-compact-video-renderer:has(a[href^="/shorts/"]),
+html[data-yfl-block-shorts="true"] yt-tab-shape[tab-title="Shorts"],
+html[data-yfl-block-shorts="true"] ytd-mini-guide-entry-renderer:has(a[href^="/shorts"]),
+html[data-yfl-block-shorts="true"] ytd-guide-entry-renderer:has(a[href^="/shorts"]),
+html[data-yfl-block-shorts="true"] ytd-guide-entry-renderer:has(a[title="Shorts"]),
+html[data-yfl-block-shorts="true"] ytd-guide-entry-renderer:has(path[d^="m13.467 1.19-8 4.7"]) {
   display: none !important;
 }
 /* The full sidebar's Shorts entry has no link address. It is found by its label, and by its
    icon for languages where the label is translated. */
 
 /* Sidebar: the whole left menu (the full menu, the narrow icon strip and the button that opens
-   it). Only while the lock is active AND the user switched Sidebar on. */
-html[data-yfl-active="true"][data-yfl-block-sidebar="true"] tp-yt-app-drawer#guide,
-html[data-yfl-active="true"][data-yfl-block-sidebar="true"] ytd-mini-guide-renderer,
-html[data-yfl-active="true"][data-yfl-block-sidebar="true"] ytd-masthead #guide-button {
+   it). Only while the lock is on and Sidebar is switched on, or while the popup previews it. */
+html[data-yfl-block-sidebar="true"] tp-yt-app-drawer#guide,
+html[data-yfl-block-sidebar="true"] ytd-mini-guide-renderer,
+html[data-yfl-block-sidebar="true"] ytd-masthead #guide-button {
   display: none !important;
 }
 
 /* YouTube keeps room beside the page for the menu; with the menu gone, the page gets it back. */
-html[data-yfl-active="true"][data-yfl-block-sidebar="true"] ytd-page-manager {
+html[data-yfl-block-sidebar="true"] ytd-page-manager {
   margin-left: 0 !important;
 }
 
@@ -163,6 +167,8 @@ html[data-yfl-notice="true"] #yfl-focus-notice {
 
 /* The first line can be a title the user wrote, so it may be long: let it wrap in balanced
    lines instead of overflowing the card. The "until" line below it always stays. */
+#yfl-focus-notice [hidden] { display: none !important; }
+
 #yfl-focus-notice .yfl-notice-line {
   display: block;
   overflow-wrap: anywhere;

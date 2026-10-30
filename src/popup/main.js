@@ -6,8 +6,9 @@ import { setHeadline } from "./headline.js";
 import { NO_MESSAGE, paintMessage, setMessageHint, showMessage } from "./message.js";
 import { listenToOccasions, occasionsDiffer, renderOccasions, selectedWindow, showOccasions, takeOccasions } from "./occasions.js";
 import { draftSchedule, listen, readDraft, renderForm, setDraft } from "./schedule-form.js";
-import { closeDrawer, onDrawerChange } from "./settings/drawer.js";
-import { listenToOptions, optionsDiffer, setOptionsBusy, showOptions, showSealed } from "./settings/options.js";
+import { showPreview } from "./preview.js";
+import { closeDrawer, isDrawerOpen, onDrawerChange } from "./settings/drawer.js";
+import { listenToOptions, optionsDiffer, readOptions, setOptionsBusy, showOptions, showSealed } from "./settings/options.js";
 import { addOnlyNotice, isLocked, keptBlockedNotice, lockedNotice, savedWhileLockedNotice, state } from "./state.js";
 import "./theme/theme-switch.js";
 import { renderTimeline } from "./timeline.js";
@@ -82,6 +83,8 @@ function render() {
   renderOccasions({ editable });
   showSealed((name) => locked && state.options[name]);
   setOptionsBusy(!state.loaded || savingOptions);
+  // The tabs follow the switches while the panel is open; this runs on every flip and every second.
+  showPreview(isDrawerOpen() ? readOptions() : null);
 
   if (locked) closeConfirm();
   refreshConfirm(now);
@@ -234,8 +237,12 @@ listenToOptions({
 // Leaving the drawer drops anything that wasn't saved, and opening it starts with a clean line.
 onDrawerChange((open) => {
   showMessage("");
-  if (!open) showOptions(state.options);
+  if (!open) {
+    showOptions(state.options);
+    showPreview(null);
+  }
 });
+window.addEventListener("pagehide", () => showPreview(null));
 
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && (changes.occasions || changes.schedule || changes.options)) void refresh();

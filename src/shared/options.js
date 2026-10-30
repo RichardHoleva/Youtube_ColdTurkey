@@ -23,7 +23,15 @@
     return KEYS.some((key) => before[key] && !after[key]);
   }
 
-  const api = Object.freeze({ KEYS, validate, normalize, removes });
+  // What to hide right now: every saved switch that is on while the lock is on, plus the switches the
+  // popup is previewing (its unsaved draft). A preview only ever adds to what the lock hides.
+  function blocked(saved, active, preview) {
+    const real = normalize(saved);
+    const draft = preview ? normalize(preview) : null;
+    return Object.fromEntries(KEYS.map((key) => [key, Boolean((active && real[key]) || (draft && draft[key]))]));
+  }
+
+  const api = Object.freeze({ KEYS, validate, normalize, removes, blocked });
   root.FocusOptions = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(globalThis);

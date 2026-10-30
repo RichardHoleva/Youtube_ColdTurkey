@@ -20,6 +20,7 @@ function setOpen(open) {
 }
 
 export const closeDrawer = () => setOpen(false);
+export const isDrawerOpen = isOpen;
 
 // The listener gets `true` when the drawer opens and `false` when it closes, however that happens.
 export function onDrawerChange(listener) {
