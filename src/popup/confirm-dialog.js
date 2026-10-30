@@ -5,22 +5,28 @@ const title = byId("confirm-title");
 const body = byId("confirm-body");
 const lockLine = byId("confirm-lock-text");
 
-let draft = null; // the schedule waiting for the user's decision
+let draft = null; // the week plan waiting for the user's decision
 
-// The wording follows the clock: the window may start while the dialog is open.
+const clock = (date) => FocusSchedule.timeLabel(date);
+
+// The wording follows the clock: a window may start while the dialog is open.
 function paint(now) {
-  const starts = FocusSchedule.isActive(draft, now);
-  setText(title, starts ? "Start focus now?" : "Lock in this schedule?");
-  setText(body, starts
-    ? `YouTube’s feed will be hidden until ${draft.end}.`
-    : `Focus starts at ${draft.start} and repeats every day.`);
-  setText(lockLine, starts
-    ? "You won’t be able to change any settings until then."
-    : `Once it starts, you won’t be able to change any settings until ${draft.end}.`);
+  const next = FocusOccasions.nextTransition(draft, now);
+  if (FocusOccasions.isActive(draft, now)) {
+    setText(title, "Start focus now?");
+    setText(body, `YouTube’s feed will be hidden until ${clock(next)}.`);
+    setText(lockLine, "You won’t be able to change any settings until then.");
+    return;
+  }
+  // Not active: `next` is when the next window starts, and the one after it is when that window ends.
+  const ends = FocusOccasions.nextTransition(draft, next);
+  setText(title, "Lock in this schedule?");
+  setText(body, `Focus starts ${FocusOccasions.when(next, now)} and repeats ${FocusOccasions.repeats(draft)}.`);
+  setText(lockLine, `Once it starts, you won’t be able to change any settings until ${clock(ends)}.`);
 }
 
-export function openConfirm(schedule, now) {
-  draft = schedule;
+export function openConfirm(occasions, now) {
+  draft = occasions;
   paint(now);
   dialog.showModal();
 }

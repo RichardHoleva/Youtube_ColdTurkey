@@ -13,7 +13,7 @@ Think of it as a cold-turkey blocker for the recommendation algorithm, not for Y
 - **Can also block Shorts.** With the Shorts switch on, during the focus window the Shorts player, the Shorts shelves and tiles in search results and feeds, the Shorts tab on channels and the sidebar link all disappear. A Short opened from a link shows a "No Shorts until HH:mm" card and is stopped, so it can't keep playing sound behind it. Left off, Shorts work as usual.
 - **Does nothing until you set it up.** A fresh install blocks nothing. You choose your hours first, and the lock starts only after you save and confirm.
 - **Locks its own settings** while the window is active, so you can't just change them when the urge hits. The hours turn read-only ("Locked until HH:mm") and a block you switched on can't be switched off. You can still block more during the lock, but only in that direction. Everything unlocks when the window ends.
-- **Repeats every day** in your computer's local time. Overnight windows such as 22:00-06:00 work too.
+- **Repeats every week** in your computer's local time, with different hours for different **occasions**: for example 08:00-20:00 on weekdays and 10:00-14:00 at the weekend, or nothing at all on Fridays. Overnight windows such as 22:00-06:00 work too.
 - **Stays private.** The schedule is stored locally in your browser, with no accounts, servers or tracking.
     
 ## Install
@@ -29,6 +29,24 @@ The extension is not on the Chrome Web Store, so you load it manually:
 ## Usage
 
 After installing, the toolbar icon shows a **SET** badge until you choose your hours. Click the icon, enter **From** and **To** times in 24-hour `HH:mm` format (typing `8` or `815` is fine; 08:00 and 20:00 are pre-filled as a suggestion), and click **Save**.
+
+### Occasions
+
+Under the 24-hour bar is a row of chips, one per occasion. A new install has one, **Every day**. An occasion is a pair of hours plus the days it applies to, and the chip is named after those days: "Weekdays", "Weekend", "Saturday", "Mon–Thu, Sat".
+
+- **Choose days** with the seven buttons under the chips (Mo to Su). Solid means the day belongs to the occasion you are editing, a light fill means it belongs to another occasion, and an empty outline means no focus that day.
+- **A day belongs to one occasion.** Giving a day to an occasion takes it from the one that had it, and an occasion that loses its last day goes away. Taking a day away leaves it with no focus.
+- **Add an occasion** with **+ Add**. It starts with no days and the same hours as the one you were on, so pick its days and change its times. You can have up to five, and remove the selected one with the **×** on its chip.
+- **Each chip has its own hours.** The bar, the From and To fields and the grips all edit the selected occasion.
+- **An occasion with no days can't be saved.** The popup tells you which one.
+- **An overnight window belongs to the day it starts on.** A Friday 22:00-06:00 window runs into Saturday morning, whatever Saturday's own occasion is.
+- **Windows that touch count as one.** Monday 22:00-06:00 followed by Tuesday 06:00-12:00 is one stretch, and the lock ends at 12:00.
+- **While locked,** you can still click a chip to look at another occasion, but nothing can be changed, as with the hours before.
+- **An older save is migrated.** A single daily window saved by an earlier version opens as an **Every day** occasion.
+
+The confirmation popup says when focus starts ("today at 08:00", "tomorrow at 08:00", "Saturday at 10:00") and until when the first stretch locks.
+
+### On the bar
 
 You can also set the hours on the 24-hour bar itself. Drag the grip at either end to change **From** or **To**, drag the bar to slide the whole window (it wraps around midnight), or click an empty spot to pull the nearer end there. Everything snaps to 5 minutes and the fields update as you drag. With a grip focused, the arrow keys nudge it by 5 minutes, or by an hour with Shift. The bar can't be dragged while the lock is on.
 
@@ -54,7 +72,7 @@ This is a focus aid, not a security tool. Read this before relying on it:
 
 ## Privacy and permissions
 
-- `storage` saves your schedule, switches, light/dark choice and card title locally with `chrome.storage.local`.
+- `storage` saves your week plan, switches, light/dark choice and card title locally with `chrome.storage.local`.
 - `alarms` schedules the checks that switch blocking on and off.
 - Site access is limited to `youtube.com` and `www.youtube.com`.
 
@@ -68,6 +86,7 @@ icons/                   Toolbar and store icons
 src/
   shared/                Used by the background worker, the content script and the popup
     schedule.js          Time-window rules: parsing, overnight windows, DST-safe transitions
+    occasions.js         The week plan: occasions, their days, naming, moving days between them
     options.js           The switchable extras (Sidebar, Shorts, Subscriptions) and their validation
     theme.js             Light or dark: a saved choice wins, otherwise follow the system
     card-title.js        The card's title: default, 40-character limit, tidying
@@ -77,7 +96,7 @@ src/
     alarms.js            Wakes the worker at the next on/off moment
     publish.js           Toolbar badge and title, and updates to open YouTube tabs
   content/               Runs on YouTube pages
-    content.js           Sets flags on <html> from the schedule, switches and page
+    content.js           Sets flags on <html> from the week plan, switches and page
     content.css          The hiding rules that react to those flags
     notice.js            The "No feed until HH:mm" card (follows the popup's light/dark choice)
   popup/                 The popup
@@ -85,6 +104,7 @@ src/
     main.js              Connects the modules below
     state.js, api.js     Popup state and messages to the background worker
     schedule-form.js     From/To fields: typing, arrow keys, validation
+    occasions.js         The plan being edited: the occasion chips and the day buttons
     confirm-dialog.js    The "lock in this schedule?" popup
     timeline.js          The 24-hour bar
     timeline-drag.js     Dragging the bar and its grips to set the hours
@@ -106,4 +126,4 @@ Requires Node.js 22 or newer and no other dependencies. From the folder containi
 node --test tests/*.test.cjs
 ```
 
-The tests use a fixed clock and a simulated Chrome API. They cover day and overnight windows, exact boundaries, daylight-saving changes, schedule validation, the settings lock (for the hours and for the switches), storage and alarm handling, and the CSS rules that decide what gets hidden. They don't launch a browser or load live YouTube.
+The tests use a fixed clock and a simulated Chrome API. They cover day and overnight windows, exact boundaries, daylight-saving changes, week plans (days, overnight spill into the next day, touching windows, naming), schedule validation, the settings lock (for the hours and for the switches), storage and alarm handling, and the CSS rules that decide what gets hidden. They don't launch a browser or load live YouTube.

@@ -1,14 +1,14 @@
 const YOUTUBE_URLS = ["https://www.youtube.com/*", "https://youtube.com/*"];
 
 function toolbarTitle(state) {
-  if (!state.schedule) return "Focus Lock: set your focus hours";
+  if (!state.occasions) return "Focus Lock: set your focus hours";
   const until = FocusSchedule.timeLabel(new Date(state.nextChange));
   return state.active ? `Focus Lock: no feed until ${until}` : `Focus Lock: feed is open until ${until}`;
 }
 
 // "SET" nudges a new user to open the popup and choose their hours.
 function toolbarBadge(state) {
-  if (!state.schedule) return "SET";
+  if (!state.occasions) return "SET";
   return state.active ? "ON" : "";
 }
 

@@ -27,15 +27,9 @@ export function draftSchedule() {
   return FocusSchedule.validate(draft) ? draft : null;
 }
 
-export function draftDiffersFrom(schedule) {
-  const start = FocusSchedule.parseTime(startInput.value) ?? startInput.value;
-  const end = FocusSchedule.parseTime(endInput.value) ?? endInput.value;
-  return start !== schedule.start || end !== schedule.end;
-}
-
-// With nothing saved yet, the default hours are only a starting suggestion.
-export function showSchedule(schedule) {
-  const shown = schedule ?? FocusSchedule.DEFAULT_SCHEDULE;
+// Puts a window into the fields. With nothing saved yet, the default hours are only a suggestion.
+export function showSchedule(window) {
+  const shown = window ?? FocusSchedule.DEFAULT_SCHEDULE;
   startInput.value = shown.start;
   endInput.value = shown.end;
   markInvalid();

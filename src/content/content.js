@@ -4,7 +4,8 @@
   "use strict";
 
   const HEARTBEAT_MS = 10_000;
-  let schedule = null; // nothing is hidden until the user has saved hours
+  let plan = null; // the week plan; nothing is hidden until the user has saved one
+  let storedPlan = {}; // what storage holds: `occasions`, or the single `schedule` an earlier version saved
   let options = FocusOptions.normalize();
   let savedTheme = null; // the choice made in the popup; null until the user makes one
   let cardTitle = FocusTitle.DEFAULT_TITLE; // what the home card says; the user can rename it
@@ -46,7 +47,7 @@
   function scheduleBoundary(now) {
     clearTimeout(boundaryTimer);
     boundaryTimer = undefined;
-    const next = FocusSchedule.nextTransition(schedule, now);
+    const next = FocusOccasions.nextTransition(plan, now);
     nextChangeLabel = next ? FocusSchedule.timeLabel(next) : "";
     if (!next) return;
     boundaryTimer = setTimeout(() => {
@@ -58,7 +59,7 @@
   function render(reschedule = false) {
     if (!document.documentElement) return;
     const now = new Date();
-    const active = FocusSchedule.isActive(schedule, now);
+    const active = FocusOccasions.isActive(plan, now);
     const page = pageType();
 
     setRootAttribute("data-yfl-active", active);
@@ -85,14 +86,15 @@
   }
 
   function apply(stored) {
-    schedule = FocusSchedule.saved(stored.schedule);
+    storedPlan = { occasions: stored.occasions, schedule: stored.schedule };
+    plan = FocusOccasions.fromStored(storedPlan);
     options = FocusOptions.normalize(stored.options);
     render(true);
   }
 
   function loadSettings() {
     try {
-      chrome.storage.local.get(["schedule", "options", "theme", "cardTitle"], (stored) => {
+      chrome.storage.local.get(["occasions", "schedule", "options", "theme", "cardTitle"], (stored) => {
         if (chrome.runtime.lastError) return;
         savedTheme = FocusTheme.normalize(stored.theme);
         cardTitle = FocusTitle.normalize(stored.cardTitle);
@@ -112,7 +114,9 @@
     if (area !== "local") return;
     if (changes.theme) savedTheme = FocusTheme.normalize(changes.theme.newValue);
     if (changes.cardTitle) cardTitle = FocusTitle.normalize(changes.cardTitle.newValue);
-    if (changes.schedule) schedule = FocusSchedule.saved(changes.schedule.newValue);
+    if (changes.occasions) storedPlan.occasions = changes.occasions.newValue;
+    if (changes.schedule) storedPlan.schedule = changes.schedule.newValue;
+    if (changes.occasions || changes.schedule) plan = FocusOccasions.fromStored(storedPlan);
     if (changes.options) options = FocusOptions.normalize(changes.options.newValue);
     render(true);
   });

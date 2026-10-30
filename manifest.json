@@ -16,7 +16,7 @@
   "content_scripts": [{
     "matches": ["https://www.youtube.com/*", "https://youtube.com/*"],
     "css": ["src/content/content.css"],
-    "js": ["src/shared/schedule.js", "src/shared/options.js", "src/shared/theme.js", "src/shared/card-title.js", "src/content/notice.js", "src/content/content.js"],
+    "js": ["src/shared/schedule.js", "src/shared/occasions.js", "src/shared/options.js", "src/shared/theme.js", "src/shared/card-title.js", "src/content/notice.js", "src/content/content.js"],
     "run_at": "document_start"
   }],
   "content_security_policy": { "extension_pages": "script-src 'self'; object-src 'self'" }

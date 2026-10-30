@@ -4,7 +4,8 @@ import { closeConfirm, onConfirm, openConfirm, refreshConfirm } from "./confirm-
 import { byId, setText } from "./dom.js";
 import { setHeadline } from "./headline.js";
 import { NO_MESSAGE, paintMessage, setMessageHint, showMessage } from "./message.js";
-import { draftDiffersFrom, draftSchedule, listen, readDraft, renderForm, setDraft, showSchedule, takeDraft } from "./schedule-form.js";
+import { listenToOccasions, occasionsDiffer, renderOccasions, selectedWindow, showOccasions, takeOccasions } from "./occasions.js";
+import { draftSchedule, listen, readDraft, renderForm, setDraft } from "./schedule-form.js";
 import { closeDrawer, onDrawerChange } from "./settings/drawer.js";
 import { listenToOptions, optionsDiffer, setOptionsBusy, showOptions, showSealed } from "./settings/options.js";
 import { addOnlyNotice, isLocked, keptBlockedNotice, lockedNotice, savedWhileLockedNotice, state } from "./state.js";
@@ -18,42 +19,43 @@ let wasLocked = null;
 let savingOptions = false;
 let retryCountdown = RETRY_TICKS;
 
-// Takes what the background worker reports. `resetInputs` also puts the typed hours and the
+// Takes what the background worker reports. `resetInputs` also puts the plan being edited and the
 // switches back to the saved ones; otherwise they only follow when the saved values changed.
-function adopt(stored, resetInputs = false) {
-  const schedule = FocusSchedule.saved(stored.schedule);
+// After a save, `keepSelection` stays on the occasion that was being edited.
+function adopt(stored, resetInputs = false, keepSelection = false) {
+  const occasions = FocusOccasions.fromStored(stored);
   const options = FocusOptions.normalize(stored.options);
-  const scheduleChanged = schedule?.start !== state.schedule?.start || schedule?.end !== state.schedule?.end;
+  const occasionsChanged = !FocusOccasions.same(occasions, state.occasions);
   const optionsChanged = FocusOptions.KEYS.some((key) => options[key] !== state.options[key]);
-  state.schedule = schedule;
+  state.occasions = occasions;
   state.options = options;
-  if (scheduleChanged || resetInputs) showSchedule(schedule);
+  if (occasionsChanged || resetInputs) showOccasions(occasions, keepSelection);
   if (optionsChanged || resetInputs) showOptions(options);
 }
 
 function adoptResponse(response) {
-  if (response?.state) adopt(response.state, Boolean(response.ok) || response.code === "LOCKED");
+  if (response?.state) adopt(response.state, Boolean(response.ok) || response.code === "LOCKED", true);
 }
 
 function viewState(locked) {
   if (!state.loaded) return state.loadFailed ? "error" : "loading";
   if (locked) return "locked";
-  return state.schedule ? "open" : "setup";
+  return state.occasions ? "open" : "setup";
 }
 
 function renderHeadline(view, now) {
   if (view === "loading") return setHeadline("Loading", "schedule…");
   if (view === "error") return setHeadline("Can’t load", "schedule.");
   if (view === "setup") return setHeadline("Set your", "focus hours.");
-  const next = FocusSchedule.timeLabel(FocusSchedule.nextTransition(state.schedule, now));
+  const next = FocusSchedule.timeLabel(FocusOccasions.nextTransition(state.occasions, now));
   return setHeadline(view === "locked" ? "No feed" : "Feed is open", "until", next);
 }
 
 // A draft can't survive into a locked window, and a "locked until" message must not outlive it.
 function trackLockChange(locked) {
   if (!state.loaded) return;
-  if (locked && wasLocked === false && (draftDiffersFrom(state.schedule) || optionsDiffer(state.options))) {
-    showSchedule(state.schedule);
+  if (locked && wasLocked === false && (occasionsDiffer(state.occasions) || optionsDiffer(state.options))) {
+    showOccasions(state.occasions, true);
     showOptions(state.options);
     showMessage("Focus has started. Unsaved changes were discarded.");
   }
@@ -63,8 +65,8 @@ function trackLockChange(locked) {
 
 const canEditHours = (now) => state.loaded && !state.saving && !isLocked(now);
 
-// The window the hours currently describe: what's typed if it's a valid pair, else what's saved.
-const editedWindow = () => draftSchedule() ?? state.schedule;
+// The window being edited: what's typed if it's a valid pair, else what the selected occasion holds.
+const editedWindow = () => draftSchedule() ?? selectedWindow();
 
 function render() {
   const now = new Date();
@@ -76,15 +78,17 @@ function render() {
   if (document.body.dataset.state !== view) document.body.dataset.state = view;
   renderHeadline(view, now);
   const editable = canEditHours(now);
-  renderForm({ schedule: state.schedule, locked, disabled: !editable, saving: state.saving });
+  renderForm({ schedule: state.loaded ? selectedWindow() : null, locked, disabled: !editable, saving: state.saving });
+  renderOccasions({ editable });
   showSealed((name) => locked && state.options[name]);
   setOptionsBusy(!state.loaded || savingOptions);
 
   if (locked) closeConfirm();
   refreshConfirm(now);
 
-  const shown = !state.loaded ? null : locked ? state.schedule : editedWindow();
-  renderTimeline({ now, shown, saved: state.schedule, editable });
+  const shown = !state.loaded ? null : locked ? selectedWindow() : editedWindow();
+  const saved = state.occasions && !occasionsDiffer(state.occasions) ? selectedWindow() : null;
+  renderTimeline({ now, shown, saved, editable });
   paintMessage();
 }
 
@@ -96,7 +100,7 @@ setMessageHint((line) => {
   if (line === "drawer") return NO_MESSAGE;
   const { start, end } = readDraft();
   if (start !== null && end !== null && start > end) return { text: "Runs through midnight.", kind: "" };
-  if (state.loaded && !state.schedule) return { text: "Nothing is blocked until you save.", kind: "" };
+  if (state.loaded && !state.occasions) return { text: "Nothing is blocked until you save.", kind: "" };
   return NO_MESSAGE;
 });
 
@@ -127,9 +131,10 @@ function handleSubmit() {
     return;
   }
 
-  const { draft, error } = takeDraft();
+  const { draft, error } = takeOccasions();
   if (error) {
     showMessage(error, "error");
+    render();
     return;
   }
   openConfirm(draft, now);
@@ -141,14 +146,16 @@ async function commitSchedule(draft) {
   showMessage("");
   render();
   try {
-    const response = await api.saveSchedule(draft);
+    const response = await api.saveOccasions(draft);
     adoptResponse(response);
+    const now = new Date();
     if (!response?.ok) {
       showMessage(response?.message ?? "Couldn’t save the schedule. Try again.", "error");
-    } else if (FocusSchedule.isActive(state.schedule, new Date())) {
+    } else if (FocusOccasions.isActive(state.occasions, now)) {
       showMessage("Saved. Focus is active and the schedule is locked.", "success");
     } else {
-      showMessage(`Saved. Focus starts at ${state.schedule.start} and repeats every day.`, "success");
+      const start = FocusOccasions.nextTransition(state.occasions, now);
+      showMessage(`Saved. Focus starts ${FocusOccasions.when(start, now)} and repeats ${FocusOccasions.repeats(state.occasions)}.`, "success");
     }
   } catch {
     showMessage("Couldn’t save the schedule. Reopen this popup and try again.", "error");
@@ -208,6 +215,12 @@ listenToTimeline({
     render();
   }
 });
+listenToOccasions({
+  onEdit: () => {
+    showMessage("");
+    render();
+  }
+});
 onConfirm(commitSchedule);
 listenToOptions({
   isSealed: (name) => isLocked(new Date()) && state.options[name],
@@ -225,7 +238,7 @@ onDrawerChange((open) => {
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && (changes.schedule || changes.options)) void refresh();
+  if (area === "local" && (changes.occasions || changes.schedule || changes.options)) void refresh();
 });
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;

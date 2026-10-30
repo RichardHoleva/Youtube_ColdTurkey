@@ -1,0 +1,27 @@
+/* Occasions: a row of chips, one per occasion, and the seven days of the selected one. A chip is
+   named after its days. In each day button, solid ink means the day belongs to the selected
+   occasion, a light fill means it belongs to another one, and an empty outline means no focus. */
+
+.occasions { margin-top: 16px; }
+
+.occasion-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.occasion-chip { display: flex; align-items: center; height: 28px; border: 1px solid var(--outline); border-radius: 4px; color: var(--ink); font: 600 13px/1 var(--sans); letter-spacing: -.01em; transition: background-color 120ms, color 120ms, border-color 120ms; }
+.occasion-chip[data-selected="true"] { border-color: var(--ink); background: var(--ink); color: var(--on-ink); }
+.chip-main { height: 100%; padding: 0 12px; }
+.chip-remove { height: 100%; padding: 0 10px 0 0; font: 400 16px/1 var(--sans); opacity: .75; }
+.chip-remove:hover { opacity: 1; color: var(--accent); }
+.occasion-chip[data-selected="true"] .chip-remove:hover { color: var(--accent); }
+.occasion-chip:not([data-selected="true"]):hover { border-color: var(--accent); }
+.chip-add { height: 28px; padding: 0 12px; border: 1px dashed var(--outline); border-radius: 4px; color: var(--muted); font: 600 13px/1 var(--sans); }
+.chip-add:hover { border-color: var(--accent); color: var(--accent); }
+
+.occasion-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
+.day { height: 28px; border: 1px solid var(--track); border-radius: 4px; color: var(--muted); font: 700 12px/1 var(--mono); letter-spacing: 0; transition: background-color 120ms, color 120ms, border-color 120ms; }
+.day[data-owner="other"] { border-color: var(--outline); background: var(--field); color: var(--ink); }
+.day[data-owner="mine"] { border-color: var(--ink); background: var(--ink); color: var(--on-ink); }
+.day:not(:disabled):hover { border-color: var(--accent); }
+.day:disabled { cursor: default; }
+
+@media (prefers-reduced-motion: reduce) {
+  .occasion-chip, .day { transition: none; }
+}

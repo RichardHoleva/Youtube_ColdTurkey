@@ -1,7 +1,7 @@
 "use strict";
-importScripts("../shared/schedule.js", "../shared/options.js", "state.js", "alarms.js", "publish.js");
+importScripts("../shared/schedule.js", "../shared/occasions.js", "../shared/options.js", "state.js", "alarms.js", "publish.js");
 
-const MESSAGE_TYPES = ["GET_STATE", "SAVE_SCHEDULE", "SAVE_OPTIONS"];
+const MESSAGE_TYPES = ["GET_STATE", "SAVE_OCCASIONS", "SAVE_OPTIONS"];
 
 // Jobs run one at a time, so a second popup can't overwrite a lock that just started.
 let pending = Promise.resolve();
@@ -25,10 +25,13 @@ function refusal(code, message, state) {
 const untilLabel = (state) => FocusSchedule.timeLabel(new Date(state.nextChange));
 
 // The popup also refuses while locked, but its clock can be stale; these checks are the real lock.
-async function saveSchedule(schedule, state) {
+async function saveOccasions(occasions, state) {
   if (state.active) return refusal("LOCKED", `Locked until ${untilLabel(state)}.`, state);
-  if (!FocusSchedule.validate(schedule)) return refusal("INVALID", "Enter two different times as HH:mm.", state);
-  await chrome.storage.local.set({ schedule: FocusSchedule.normalize(schedule) });
+  if (!FocusOccasions.validate(occasions)) {
+    return refusal("INVALID", "Give every occasion at least one day, and two different times as HH:mm.", state);
+  }
+  await chrome.storage.local.set({ occasions: FocusOccasions.normalize(occasions) });
+  await chrome.storage.local.remove("schedule"); // the single window an earlier version saved
   return { ok: true, state: await synchronize() };
 }
 
@@ -45,7 +48,7 @@ async function saveOptions(options, state) {
 async function handleMessage(message) {
   if (message.type === "GET_STATE") return { ok: true, state: await synchronize(false) };
   const state = makeState(await readStored());
-  return message.type === "SAVE_SCHEDULE" ? saveSchedule(message.schedule, state) : saveOptions(message.options, state);
+  return message.type === "SAVE_OCCASIONS" ? saveOccasions(message.occasions, state) : saveOptions(message.options, state);
 }
 
 function refresh() {
@@ -68,7 +71,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === HEARTBEAT || alarm.name === BOUNDARY) refresh();
 });
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && (changes.schedule || changes.options)) refresh();
+  if (area === "local" && (changes.occasions || changes.schedule || changes.options)) refresh();
 });
 
 // A suspended worker that wakes up again recreates its alarms here.

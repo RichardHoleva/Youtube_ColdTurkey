@@ -1,19 +1,20 @@
-// Both are empty until the user saves: a fresh install is not locked.
+// Both are empty until the user saves: a fresh install is not locked. A single window saved by an
+// earlier version is read as an every-day occasion.
 async function readStored() {
-  const stored = await chrome.storage.local.get(["schedule", "options"]);
+  const stored = await chrome.storage.local.get(["occasions", "schedule", "options"]);
   return {
-    schedule: FocusSchedule.saved(stored.schedule),
+    occasions: FocusOccasions.fromStored(stored),
     options: FocusOptions.normalize(stored.options)
   };
 }
 
-function makeState({ schedule, options }) {
+function makeState({ occasions, options }) {
   const now = new Date();
-  const next = FocusSchedule.nextTransition(schedule, now);
+  const next = FocusOccasions.nextTransition(occasions, now);
   return {
-    schedule,
+    occasions,
     options,
-    active: FocusSchedule.isActive(schedule, now),
+    active: FocusOccasions.isActive(occasions, now),
     now: now.getTime(),
     nextChange: next ? next.getTime() : null
   };

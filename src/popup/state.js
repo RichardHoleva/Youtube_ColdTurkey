@@ -1,7 +1,7 @@
-// FocusSchedule and FocusOptions are plain scripts loaded by popup.html from ../shared.
+// FocusSchedule, FocusOccasions and FocusOptions are plain scripts loaded by popup.html from ../shared.
 
 export const state = {
-  schedule: null, // the saved schedule; null until the user saves one
+  occasions: null, // the saved week plan; null until the user saves one
   options: FocusOptions.normalize(),
   loaded: false,
   loadFailed: false,
@@ -9,12 +9,12 @@ export const state = {
 };
 
 export function isLocked(now) {
-  return state.loaded && FocusSchedule.isActive(state.schedule, now);
+  return state.loaded && FocusOccasions.isActive(state.occasions, now);
 }
 
 // The notices below are only for use while locked: they name the moment the lock ends.
 function until(now) {
-  return FocusSchedule.timeLabel(FocusSchedule.nextTransition(state.schedule, now));
+  return FocusSchedule.timeLabel(FocusOccasions.nextTransition(state.occasions, now));
 }
 
 export const lockedNotice = (now) => `Locked until ${until(now)}.`;
